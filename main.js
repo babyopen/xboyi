@@ -5,7 +5,7 @@
  * @enum {any}
  */
 const CONFIG = Object.freeze({
-  VERSION: 'V26.6.1',
+  VERSION: 'V1.0.01',
   DATA_VERSION: 1, // 数据版本号，用于后续数据迁移
   // API配置
   API: Object.freeze({
@@ -2381,7 +2381,7 @@ const Business = {
         Business.refreshHistory();
       }
     } else {
-      // 已有数据，直接渲染
+      // 已有数据，直接渲染，不再额外刷新（initApp已经处理了）
       Business.renderLatest(state.analysis.historyData[0]);
       Business.renderHistory();
       Business.renderFullAnalysis();
@@ -2399,6 +2399,12 @@ const Business = {
     try {
       const year = new Date().getFullYear();
       const res = await fetch(CONFIG.API.HISTORY + year);
+      
+      if (!res.ok) {
+        console.error('API请求失败:', res.status, res.statusText);
+        return;
+      }
+      
       const data = await res.json();
       let rawData = data.data || [];
 
@@ -2422,33 +2428,38 @@ const Business = {
         return Number(b.expect || 0) - Number(a.expect || 0);
       });
 
-      // 更新状态
-      const newAnalysis = { 
-        ...StateManager._state.analysis, 
-        historyData: sortedData 
-      };
-      StateManager.setState({ analysis: newAnalysis }, false);
+      // 检查数据是否有变化
+      const currentData = StateManager._state.analysis.historyData;
+      const hasDataChanged = Business.hasDataChanged(currentData, sortedData);
 
-      // 保存到缓存
-      Storage.saveHistoryCache(sortedData);
+      if (hasDataChanged) {
+        // 更新状态
+        const newAnalysis = { 
+          ...StateManager._state.analysis, 
+          historyData: sortedData 
+        };
+        StateManager.setState({ analysis: newAnalysis }, false);
 
-      // 渲染
-      Business.renderLatest(sortedData[0]);
-      Business.renderHistory();
-      Business.renderFullAnalysis();
-      Business.renderZodiacAnalysis();
-      Business.updateHotColdStatus();
-      
-      // 静默更新所有期数的预测历史
-      Business.silentUpdateAllPredictionHistory();
-      // 同时更新精选特码历史的开奖记录比较
-      Business.updateSpecialHistoryComparison();
-      // 重新渲染精选特码历史以显示最新比较结果
-      Business.renderSpecialHistory();
-      
-      // 数据已静默刷新
+        // 保存到缓存
+        Storage.saveHistoryCache(sortedData);
+
+        // 渲染
+        Business.renderLatest(sortedData[0]);
+        Business.renderHistory();
+        Business.renderFullAnalysis();
+        Business.renderZodiacAnalysis();
+        Business.updateHotColdStatus();
+        
+        // 静默更新所有期数的预测历史
+        Business.silentUpdateAllPredictionHistory();
+        // 同时更新精选特码历史的开奖记录比较
+        Business.updateSpecialHistoryComparison();
+        // 重新渲染精选特码历史以显示最新比较结果
+        Business.renderSpecialHistory();
+      }
     } catch(e) {
-      console.error('静默刷新失败', e);
+      console.debug('静默刷新失败（API可能不可用）:', e.message);
+      // 不显示错误，保持静默
     }
   },
 
@@ -2463,6 +2474,15 @@ const Business = {
     try {
       const year = new Date().getFullYear();
       const res = await fetch(CONFIG.API.HISTORY + year);
+      
+      if (!res.ok) {
+        if(historyList && !silent) {
+          historyList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">API请求失败，请检查网络连接</div>';
+        }
+        if(!silent) Toast.show('API请求失败，请检查网络连接');
+        return;
+      }
+      
       const data = await res.json();
       let rawData = data.data || [];
 
@@ -2486,36 +2506,44 @@ const Business = {
         return Number(b.expect || 0) - Number(a.expect || 0);
       });
 
-      // 更新状态
-      const newAnalysis = { ...StateManager._state.analysis, historyData: sortedData };
-      StateManager.setState({ analysis: newAnalysis }, false);
+      // 检查数据是否有变化
+      const currentData = StateManager._state.analysis.historyData;
+      const hasDataChanged = Business.hasDataChanged(currentData, sortedData);
 
-      // 保存到缓存
-      Storage.saveHistoryCache(sortedData);
+      if (hasDataChanged) {
+        // 更新状态
+        const newAnalysis = { ...StateManager._state.analysis, historyData: sortedData };
+        StateManager.setState({ analysis: newAnalysis }, false);
 
-      // 渲染
-      Business.renderLatest(sortedData[0]);
-      Business.renderHistory();
-      Business.renderFullAnalysis();
-      Business.renderZodiacAnalysis();
-      
-      // 更新冷热号状态
-      Business.updateHotColdStatus();
-      
-      // 静默更新所有期数的预测历史
-      Business.silentUpdateAllPredictionHistory();
-      // 同时更新精选特码历史的开奖记录比较
-      Business.updateSpecialHistoryComparison();
-      // 重新渲染精选特码历史以显示最新比较结果
-      Business.renderSpecialHistory();
-      
-      if(!silent) Toast.show('数据加载成功');
+        // 保存到缓存
+        Storage.saveHistoryCache(sortedData);
+
+        // 渲染
+        Business.renderLatest(sortedData[0]);
+        Business.renderHistory();
+        Business.renderFullAnalysis();
+        Business.renderZodiacAnalysis();
+        
+        // 更新冷热号状态
+        Business.updateHotColdStatus();
+        
+        // 静默更新所有期数的预测历史
+        Business.silentUpdateAllPredictionHistory();
+        // 同时更新精选特码历史的开奖记录比较
+        Business.updateSpecialHistoryComparison();
+        // 重新渲染精选特码历史以显示最新比较结果
+        Business.renderSpecialHistory();
+        
+        if(!silent) Toast.show('数据加载成功');
+      } else if (!silent) {
+        Toast.show('数据已是最新');
+      }
     } catch(e) {
       console.error('加载历史数据失败', e);
       if(historyList && !silent) {
-        historyList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">数据加载失败，请刷新重试</div>';
+        historyList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">数据加载失败，可能是网络问题</div>';
       }
-      if(!silent) Toast.show('数据加载失败');
+      if(!silent) Toast.show('数据加载失败，可能是网络问题');
     }
     
     const loadMore = document.getElementById('loadMore');
@@ -4317,6 +4345,30 @@ const Business = {
     const h = now.getHours();
     const m = now.getMinutes();
     return h === 21 && m >= 32 && m <= 40;
+  },
+
+  /**
+   * 检查数据是否有变化
+   * @param {Array} currentData - 当前数据
+   * @param {Array} newData - 新数据
+   * @returns {boolean} 是否有变化
+   */
+  hasDataChanged: (currentData, newData) => {
+    if (!currentData || !newData) return true;
+    if (currentData.length !== newData.length) return true;
+    
+    // 比较最近的几期数据
+    const compareCount = Math.min(5, currentData.length, newData.length);
+    for (let i = 0; i < compareCount; i++) {
+      const current = currentData[i];
+      const newItem = newData[i];
+      
+      if (!current || !newItem) return true;
+      if (current.expect !== newItem.expect) return true;
+      if (current.openCode !== newItem.openCode) return true;
+    }
+    
+    return false;
   },
 
   /**
@@ -9639,14 +9691,33 @@ async function initApp() {
     Render.renderFilterList();
     // 9. 尝试从缓存加载历史数据
     const cache = Storage.loadHistoryCache();
+    let hasValidCache = false;
     if(cache.data && cache.data.length > 0) {
       const newAnalysis = { 
         ...StateManager._state.analysis, 
         historyData: cache.data 
       };
       StateManager.setState({ analysis: newAnalysis }, false);
-      // 已从缓存加载历史数据
+      hasValidCache = true;
+      
+      // 有缓存数据时，立即渲染一次
+      Business.renderLatest(cache.data[0]);
+      Business.renderHistory();
+      Business.renderFullAnalysis();
+      Business.renderZodiacAnalysis();
+      Business.updateHotColdStatus();
     }
+    
+    // 无论是否有缓存，都在后台静默刷新获取最新数据
+    // 如果有缓存，刷新后如果数据有变化会自动更新
+    setTimeout(() => {
+      if(hasValidCache) {
+        Business.silentRefreshHistory();
+      } else {
+        // 没有缓存时，直接正常加载
+        Business.refreshHistory(true);
+      }
+    }, 1000);
     
     // 10. 加载预测历史勾选状态并渲染
     Business.loadPredictionHistoryFilter();
@@ -9732,6 +9803,16 @@ async function initApp() {
     
     // 16. 隐藏加载遮罩
     Render.hideLoading();
+    
+    // 17. 添加页面可见性监听器：页面从后台切换回来时刷新数据
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'visible') {
+        // 页面变为可见时，静默刷新数据
+        setTimeout(() => {
+          Business.silentRefreshHistory();
+        }, 500);
+      }
+    });
     
     // 延迟静默更新预测历史并保存精选特码和精选生肖
     setTimeout(() => {
