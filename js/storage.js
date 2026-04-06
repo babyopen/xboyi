@@ -95,6 +95,18 @@ export const Storage = {
   _memoryStorage: {},
 
   /**
+   * 内存缓存（减少localStorage访问次数）
+   * @private
+   */
+  _memoryCache: {},
+
+  /**
+   * 内存缓存有效期（毫秒）- 5分钟
+   * @readonly
+   */
+  MEMORY_CACHE_DURATION: 5 * 60 * 1000,
+
+  /**
    * 检测localStorage是否可用
    * @returns {boolean} 是否可用
    */
@@ -117,12 +129,32 @@ export const Storage = {
    */
   get: (key, defaultValue = null) => {
     try {
-      if(Storage.isLocalStorageAvailable()){
-        const value = localStorage.getItem(key);
-        return value ? JSON.parse(value) : defaultValue;
-      } else {
-        return Storage._memoryStorage[key] || defaultValue;
+      // 检查内存缓存
+      const cached = Storage._memoryCache[key];
+      if (cached) {
+        const now = Date.now();
+        if (now - cached.timestamp < Storage.MEMORY_CACHE_DURATION) {
+          return cached.value;
+        }
+        // 缓存过期，删除
+        delete Storage._memoryCache[key];
       }
+
+      let value;
+      if(Storage.isLocalStorageAvailable()){
+        const storedValue = localStorage.getItem(key);
+        value = storedValue ? JSON.parse(storedValue) : defaultValue;
+      } else {
+        value = Storage._memoryStorage[key] || defaultValue;
+      }
+
+      // 更新内存缓存
+      Storage._memoryCache[key] = {
+        value: value,
+        timestamp: Date.now()
+      };
+
+      return value;
     } catch(e) {
       console.error('存储读取失败', e);
       return defaultValue;
@@ -143,6 +175,13 @@ export const Storage = {
       } else {
         Storage._memoryStorage[key] = value;
       }
+
+      // 更新内存缓存
+      Storage._memoryCache[key] = {
+        value: value,
+        timestamp: Date.now()
+      };
+
       return true;
     } catch(e) {
       console.error('存储写入失败', e);
@@ -163,6 +202,10 @@ export const Storage = {
       } else {
         delete Storage._memoryStorage[key];
       }
+
+      // 从内存缓存中删除
+      delete Storage._memoryCache[key];
+
       return true;
     } catch(e) {
       console.error('存储移除失败', e);
@@ -370,5 +413,47 @@ export const Storage = {
    */
   clearHotNumbersHistory: () => {
     Storage.remove(Storage.KEYS.HOT_NUMBERS_HISTORY);
+  },
+
+  /**
+   * 保存生肖预测历史
+   * @param {Array} history - 生肖预测历史记录
+   */
+  saveZodiacPredictionHistory: (history) => {
+    Storage.set(Storage.KEYS.ZODIAC_PREDICTION_HISTORY, history);
+  },
+
+  /**
+   * 加载生肖预测历史缓存
+   * @returns {Array} 过滤后的历史记录（只保留30天内的）
+   */
+  loadZodiacPredictionHistory: () => {
+    const data = Storage.get(Storage.KEYS.ZODIAC_PREDICTION_HISTORY, null);
+    if(!data || !Array.isArray(data)) {
+      return [];
+    }
+
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+    // 过滤掉超过30天的记录
+    const filteredHistory = data.filter(item => {
+      const itemTime = new Date(item.timestamp).getTime() || now;
+      return itemTime >= thirtyDaysAgo;
+    });
+
+    // 如果有过期的记录被过滤掉，更新缓存
+    if(filteredHistory.length < data.length) {
+      Storage.saveZodiacPredictionHistory(filteredHistory);
+    }
+
+    return filteredHistory;
+  },
+
+  /**
+   * 清除生肖预测历史缓存
+   */
+  clearZodiacPredictionHistory: () => {
+    Storage.remove(Storage.KEYS.ZODIAC_PREDICTION_HISTORY);
   }
 };

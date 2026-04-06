@@ -10,12 +10,16 @@ import { EventBinder } from './event-binder.js';
 import { Toast } from './toast.js';
 import { CONFIG } from './config.js';
 import { Utils } from './utils.js';
+import { PerformanceMonitor } from './performance-monitor.js';
 
 /**
  * 应用初始化
  */
 async function initApp() {
   try {
+    // 初始化性能监控
+    PerformanceMonitor.init();
+    
     // 1. 生成生肖数据
     Render.buildZodiacCycle();
     // 2. 生成号码基础数据
@@ -252,6 +256,8 @@ async function initApp() {
     }
     
     // 应用初始化完成
+    console.log('应用初始化完成');
+    PerformanceMonitor.logMetrics();
   } catch(e) {
     console.error('应用初始化失败', e);
     Toast.show('页面初始化失败，请刷新重试');
@@ -736,9 +742,19 @@ if (!Business.syncZodiacAnalyze) {
 if (!Business.toggleDetail) {
   Business.toggleDetail = (targetId) => {
     try {
-      const target = document.getElementById(targetId);
-      if(target) {
-        target.classList.toggle('show');
+      const targetElementId = targetId || 'detailPanel';
+      const detailPanel = document.getElementById(targetElementId);
+      if(detailPanel) {
+        detailPanel.classList.toggle('show');
+        // 同时更新按钮文本
+        const button = document.querySelector(`[data-action="toggleDetail"][data-target="${targetElementId}"]`);
+        if(button) {
+          if(detailPanel.classList.contains('show')) {
+            button.textContent = '收起详情';
+          } else {
+            button.textContent = '展开详情';
+          }
+        }
       }
     } catch(e) {
       console.error('切换详情失败:', e);

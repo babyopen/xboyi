@@ -169,7 +169,13 @@ export const EventBinder = {
       if(action === 'renameFavorite') Business.renameFavorite(Number(index));
       if(action === 'copyFavorite') Business.copyFavorite(Number(index));
       // 导航操作
-      if(action === CONFIG.ACTIONS.SWITCH_NAV) Business.switchBottomNav(actionBtn.dataset.page || actionBtn.dataset.target);
+      if (action === CONFIG.ACTIONS.SWITCH_NAV) {
+        const targetIndex = actionBtn.dataset.index;
+        if (targetIndex !== undefined) {
+          Business.switchBottomNav(Number(targetIndex));
+        }
+        return;
+      }
       // 我的页面菜单操作
       if(action === 'openSettings') Business.openSettings();
       if(action === 'openNotification') Business.openNotification();
@@ -491,3 +497,21 @@ export const EventBinder = {
     }
   }
 };
+
+// 确保 switchBottomNav 存在
+if (!Business.switchBottomNav) {
+  Business.switchBottomNav = (index) => {
+    const pages = ['filterPage', 'analysisPage', 'recordPage', 'profilePage'];
+    pages.forEach((id, i) => {
+      const page = document.getElementById(id);
+      if (page) page.style.display = i === index ? 'block' : 'none';
+    });
+    const topBox = document.getElementById('topBox');
+    if (topBox) topBox.style.display = index === 0 ? 'block' : 'none';
+    const bodyBox = document.querySelector('.body-box');
+    if (bodyBox) bodyBox.style.marginTop = index === 0 ? 'var(--top-offset)' : '0';
+    document.querySelectorAll('.bottom-nav-item').forEach((btn, i) => {
+      btn.classList.toggle('active', i === index);
+    });
+  };
+}

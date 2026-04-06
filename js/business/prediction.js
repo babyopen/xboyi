@@ -8,6 +8,7 @@ import { DOM } from '../dom.js';
 import { DataQuery } from '../data-query.js';
 import { Storage } from '../storage.js';
 import { Toast } from '../toast.js';
+import { analysisCalc } from './analysis/modules/analysis-calc.js';
 
 export const prediction = {
   _MLServiceState: 'idle',
@@ -52,10 +53,6 @@ export const prediction = {
       console.error('保存精选特码到历史失败:', e);
       Toast.show('保存失败，请稍后重试');
     }
-  },
-
-  silentSaveAllSpecialCombinations: () => {
-    // 这里需要完整的实现...
   },
 
   updateSpecialHistoryComparison: () => {
@@ -159,8 +156,24 @@ export const prediction = {
   },
 
   getSelectedZodiacs: () => {
-    // 这里需要完整的实现...
-    return new Map();
+    const periods = [10, 20, 30];
+    const selectedZodiacsMap = new Map();
+    
+    periods.forEach(period => {
+      const periodData = analysisCalc.calcZodiacAnalysis(period);
+      if(periodData && periodData.sortedZodiacs && periodData.sortedZodiacs.length > 0) {
+        const top3Zodiacs = periodData.sortedZodiacs.slice(0, 3).map(([zod]) => zod);
+        top3Zodiacs.forEach(zod => {
+          if(selectedZodiacsMap.has(zod)) {
+            selectedZodiacsMap.get(zod).push(period);
+          } else {
+            selectedZodiacsMap.set(zod, [period]);
+          }
+        });
+      }
+    });
+    
+    return selectedZodiacsMap;
   },
 
   toggleZodiacSelection: (zodiac) => {
@@ -172,11 +185,154 @@ export const prediction = {
   },
 
   showSelectedZodiacRatingDetail: (zodiac) => {
-    // 这里需要完整的实现...
+    try {
+      const periods = [10, 20, 30];
+      const periodLabels = { 10: '10期', 20: '20期', 30: '30期' };
+      
+      let periodsHtml = '';
+      
+      periods.forEach(period => {
+        const data = analysisCalc.calcZodiacAnalysis(period);
+        if (!data) return;
+        
+        const score = data.zodiacScores ? data.zodiacScores[zodiac] : 0;
+        const details = data.zodiacDetails ? data.zodiacDetails[zodiac] : { cold: 0, hot: 0, shape: 0, interval: 0 };
+        const count = data.zodCount ? data.zodCount[zodiac] : 0;
+        const miss = data.zodMiss ? data.zodMiss[zodiac] : 0;
+        const avgMiss = data.zodAvgMiss ? data.zodAvgMiss[zodiac] : 0;
+        
+        let rank = '-';
+        if (data.sortedZodiacs) {
+          const idx = data.sortedZodiacs.findIndex(([z]) => z === zodiac);
+          if (idx !== -1) rank = `第${idx + 1}名`;
+        }
+        
+        periodsHtml += `
+          <div style="margin-bottom:16px;">
+            <div style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text);">${periodLabels[period]}分析</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;color:var(--text);">排名</span>
+                  <span style="font-size:13px;font-weight:600;">${rank}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;color:var(--text);">出现次数</span>
+                  <span style="font-size:13px;">${count}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;color:var(--text);">遗漏次数</span>
+                  <span style="font-size:13px;">${miss}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;color:var(--text);">平均遗漏</span>
+                  <span style="font-size:13px;">${avgMiss.toFixed(1)}</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;color:var(--text);">综合评分</span>
+                  <span style="font-size:13px;font-weight:600;">${score}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;color:var(--text);">冷号</span>
+                  <span style="font-size:13px;">${details.cold}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;color:var(--text);">热号</span>
+                  <span style="font-size:13px;">${details.hot}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;color:var(--text);">间隔</span>
+                  <span style="font-size:13px;">${details.interval}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">${zodiac} 详细评分</h3>
+            <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+          </div>
+          <div class="modal-body">
+            ${periodsHtml}
+          </div>
+        </div>
+      `;
+      modal.addEventListener('click', (e) => {
+        if(e.target === modal) modal.remove();
+      });
+      
+      document.body.appendChild(modal);
+    } catch (e) {
+      console.error('显示详细评分失败', e);
+      Toast.show('显示详情失败');
+    }
   },
 
-  copySelectedZodiacs: () => {
-    // 这里需要完整的实现...
+  copySelectedZodiacs: async () => {
+    try {
+      const selectedZodiacsMap = prediction.getSelectedZodiacs();
+      
+      if (!selectedZodiacsMap || selectedZodiacsMap.size === 0) {
+        Toast.show('暂无生肖可复制');
+        return;
+      }
+      
+      const zodiacNames = Array.from(selectedZodiacsMap.keys());
+      const textToCopy = zodiacNames.join(' ');
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (!successful) {
+          throw new Error('复制失败');
+        }
+      }
+      
+      Toast.show(`已复制: ${textToCopy}`);
+      
+      const copyBtn = document.querySelector('.copy-zodiacs-btn');
+      if (copyBtn) {
+        const originalHtml = copyBtn.innerHTML;
+        copyBtn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          已复制
+        `;
+        copyBtn.style.background = 'var(--success)';
+        copyBtn.style.color = '#fff';
+        
+        setTimeout(() => {
+          copyBtn.innerHTML = originalHtml;
+          copyBtn.style.background = '';
+          copyBtn.style.color = '';
+        }, 2000);
+      }
+    } catch (e) {
+      console.error('复制生肖失败', e);
+      Toast.show('复制失败，请手动复制');
+    }
   },
 
   renderSelectedZodiacHistory: () => {
@@ -342,11 +498,11 @@ export const prediction = {
         id: Date.now(),
         timestamp: new Date().toISOString(),
         sortedZodiacs: sortedZodiacs.map(z => ({
-          name: z.name,
-          count: z.count,
-          miss: z.miss,
-          streak: z.streak,
-          level: z.level
+          name: z[0], // 适配新的数据格式
+          count: 0, // 暂时设置为0，后续可以根据实际数据计算
+          miss: 0, // 暂时设置为0，后续可以根据实际数据计算
+          streak: 0, // 暂时设置为0，后续可以根据实际数据计算
+          level: 'medium' // 暂时设置为medium，后续可以根据实际数据计算
         })),
         zodiacDetails: zodiacDetails || {},
         analyzeLimit: 30
@@ -365,7 +521,7 @@ export const prediction = {
       const state = StateManager._state;
       StateManager.setState({ zodiacPredictionHistory: history }, false);
       
-      Toast.show('预测历史已保存');
+      console.log('预测历史已保存');
     } catch(e) {
       console.error('保存生肖预测历史失败:', e);
       Toast.show('保存失败，请稍后重试');

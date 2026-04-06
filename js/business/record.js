@@ -23,10 +23,98 @@ export const record = {
   },
 
   /**
+   * 渲染我的收藏
+   */
+  renderFavorites: () => {
+    try {
+      const favorites = Storage.get('favorites', []);
+      const favoriteList = document.getElementById('favoriteList');
+      if (!favoriteList) return;
+
+      if (favorites.length === 0) {
+        favoriteList.innerHTML = '<div class="empty-tip">暂无收藏</div>';
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      favorites.forEach((favorite, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'filter-save-item';
+        itemDiv.setAttribute('role', 'listitem');
+
+        itemDiv.innerHTML = `
+          <div class="filter-save-item-header">
+            <div class="filter-save-item-name">${favorite.name}</div>
+            <div class="filter-save-item-actions">
+              <button class="action-btn" onclick="Business.loadFavorite(${index})"><i class="icon-load"></i> 加载</button>
+              <button class="action-btn danger" onclick="Business.deleteFavorite(${index})"><i class="icon-delete"></i> 删除</button>
+            </div>
+          </div>
+          <div class="filter-save-item-content">
+            <div class="filter-save-item-info">
+              <span>保存时间: ${new Date(favorite.timestamp).toLocaleString()}</span>
+              <span>过滤条件: ${Object.keys(favorite.filters).length} 项</span>
+            </div>
+          </div>
+        `;
+
+        fragment.appendChild(itemDiv);
+      });
+
+      favoriteList.innerHTML = '';
+      favoriteList.appendChild(fragment);
+    } catch(e) {
+      console.error('渲染收藏失败:', e);
+    }
+  },
+
+  /**
+   * 渲染预测统计
+   */
+  renderPredictionStatistics: () => {
+    try {
+      const statisticsBody = document.getElementById('predictionStatisticsBody');
+      if (!statisticsBody) return;
+
+      // 这里可以添加实际的预测统计逻辑
+      // 暂时显示加载完成信息
+      statisticsBody.innerHTML = `
+        <div class="prediction-statistics">
+          <div class="statistic-item">
+            <div class="statistic-label">总预测次数</div>
+            <div class="statistic-value">0</div>
+          </div>
+          <div class="statistic-item">
+            <div class="statistic-label">成功次数</div>
+            <div class="statistic-value">0</div>
+          </div>
+          <div class="statistic-item">
+            <div class="statistic-label">成功率</div>
+            <div class="statistic-value">0%</div>
+          </div>
+          <div class="statistic-item">
+            <div class="statistic-label">最近预测</div>
+            <div class="statistic-value">暂无</div>
+          </div>
+        </div>
+      `;
+    } catch(e) {
+      console.error('渲染预测统计失败:', e);
+    }
+  },
+
+  /**
    * 渲染所有记录
    */
   renderAllRecords: () => {
     try {
+      // 渲染我的收藏
+      record.renderFavorites();
+      
+      // 渲染预测统计
+      record.renderPredictionStatistics();
+      
       // 渲染生肖预测历史
       record.renderZodiacPredictionHistory();
       
@@ -35,6 +123,9 @@ export const record = {
       
       // 渲染精选生肖历史
       record.renderSelectedZodiacHistory();
+      
+      // 渲染ML预测历史
+      record.renderMLPredictionHistory();
       
       // 渲染热门特码历史
       record.renderHotNumbersHistory();
@@ -50,11 +141,11 @@ export const record = {
   renderZodiacPredictionHistory: () => {
     try {
       const history = Storage.get('zodiacPredictionHistory', []);
-      const historyList = document.getElementById('zodiacPredictionHistory');
+      const historyList = document.getElementById('zodiacPredictionHistoryList');
       if (!historyList) return;
 
       if (history.length === 0) {
-        historyList.innerHTML = '<div style="text-align:center; padding:40px; color:var(--sub-text);">暂无生肖预测历史</div>';
+        historyList.innerHTML = '<div class="empty-tip">暂无预测历史</div>';
         return;
       }
 
@@ -65,11 +156,13 @@ export const record = {
         itemDiv.className = 'prediction-history-item';
         itemDiv.setAttribute('role', 'listitem');
 
-        const topZodiacs = item.sortedZodiacs.slice(0, 3).map(z => `${z.name}(${z.count})`).join(', ');
+        const sortedZodiacs = item.sortedZodiacs || [];
+        const topZodiacs = sortedZodiacs.slice(0, 3).map(z => `${z.name || ''}(${z.count || 0})`).join(', ') || '无数据';
+        const analyzeLimit = item.analyzeLimit || '未知';
 
         itemDiv.innerHTML = `
           <div class="prediction-history-header">
-            <div class="prediction-history-time">${new Date(item.timestamp).toLocaleString()}</div>
+            <div class="prediction-history-time">${new Date(item.timestamp || Date.now()).toLocaleString()}</div>
             <div class="prediction-history-actions">
               <button class="action-btn" onclick="Business.copyZodiacPredictionHistory(${index})"><i class="icon-copy"></i> 复制</button>
               <button class="action-btn danger" onclick="Business.deleteZodiacPredictionHistoryItem(${index})"><i class="icon-delete"></i> 删除</button>
@@ -78,7 +171,7 @@ export const record = {
           <div class="prediction-history-content">
             <div class="prediction-history-top">
               <span>前3热生肖: ${topZodiacs}</span>
-              <span>分析期数: ${item.analyzeLimit}</span>
+              <span>分析期数: ${analyzeLimit}</span>
             </div>
           </div>
         `;
@@ -88,8 +181,18 @@ export const record = {
 
       historyList.innerHTML = '';
       historyList.appendChild(fragment);
+
+      // 显示/隐藏展开更多按钮
+      const toggleBtn = document.getElementById('zodiacPredictionHistoryToggle');
+      if (toggleBtn) {
+        toggleBtn.style.display = history.length > 5 ? 'block' : 'none';
+      }
     } catch(e) {
       console.error('渲染生肖预测历史失败:', e);
+      const historyList = document.getElementById('zodiacPredictionHistoryList');
+      if (historyList) {
+        historyList.innerHTML = '<div class="empty-tip">暂无预测历史</div>';
+      }
     }
   },
 
@@ -99,11 +202,11 @@ export const record = {
   renderSpecialHistory: () => {
     try {
       const history = Storage.get('specialHistory', []);
-      const historyList = document.getElementById('specialHistory');
+      const historyList = document.getElementById('specialHistoryList');
       if (!historyList) return;
 
       if (history.length === 0) {
-        historyList.innerHTML = '<div style="text-align:center; padding:40px; color:var(--sub-text);">暂无精选特码历史</div>';
+        historyList.innerHTML = '<div class="empty-tip">暂无精选特码历史</div>';
         return;
       }
 
@@ -114,14 +217,15 @@ export const record = {
         itemDiv.className = 'special-history-item';
         itemDiv.setAttribute('role', 'listitem');
 
-        const specialHtml = item.special.map(num => {
+        const special = item.special || [];
+        const specialHtml = special.map(num => {
           const numStr = String(num).padStart(2, '0');
           return `<span class="special-number">${numStr}</span>`;
-        }).join(' ');
+        }).join(' ') || '无数据';
 
         itemDiv.innerHTML = `
           <div class="special-history-header">
-            <div class="special-history-time">${new Date(item.timestamp).toLocaleString()}</div>
+            <div class="special-history-time">${new Date(item.timestamp || Date.now()).toLocaleString()}</div>
             <div class="special-history-actions">
               <button class="action-btn" onclick="Business.copySpecialHistory(${index})"><i class="icon-copy"></i> 复制</button>
               <button class="action-btn danger" onclick="Business.deleteSpecialHistoryItem(${index})"><i class="icon-delete"></i> 删除</button>
@@ -142,6 +246,10 @@ export const record = {
       historyList.appendChild(fragment);
     } catch(e) {
       console.error('渲染精选特码历史失败:', e);
+      const historyList = document.getElementById('specialHistoryList');
+      if (historyList) {
+        historyList.innerHTML = '<div class="empty-tip">暂无精选特码历史</div>';
+      }
     }
   },
 
@@ -151,11 +259,11 @@ export const record = {
   renderSelectedZodiacHistory: () => {
     try {
       const history = Storage.get('selectedZodiacHistory', []);
-      const historyList = document.getElementById('selectedZodiacHistory');
+      const historyList = document.getElementById('selectedZodiacHistoryList');
       if (!historyList) return;
 
       if (history.length === 0) {
-        historyList.innerHTML = '<div style="text-align:center; padding:40px; color:var(--sub-text);">暂无精选生肖历史</div>';
+        historyList.innerHTML = '<div class="empty-tip">暂无精选生肖历史</div>';
         return;
       }
 
@@ -166,13 +274,14 @@ export const record = {
         itemDiv.className = 'selected-zodiac-history-item';
         itemDiv.setAttribute('role', 'listitem');
 
-        const zodiacsHtml = item.zodiacs.map(zodiac => {
+        const zodiacs = item.zodiacs || [];
+        const zodiacsHtml = zodiacs.map(zodiac => {
           return `<span class="zodiac-tag">${zodiac}</span>`;
-        }).join(' ');
+        }).join(' ') || '无数据';
 
         itemDiv.innerHTML = `
           <div class="selected-zodiac-history-header">
-            <div class="selected-zodiac-history-time">${new Date(item.timestamp).toLocaleString()}</div>
+            <div class="selected-zodiac-history-time">${new Date(item.timestamp || Date.now()).toLocaleString()}</div>
             <div class="selected-zodiac-history-actions">
               <button class="action-btn" onclick="Business.copySelectedZodiacHistoryItem(${index})"><i class="icon-copy"></i> 复制</button>
               <button class="action-btn danger" onclick="Business.deleteSelectedZodiacHistoryItem(${index})"><i class="icon-delete"></i> 删除</button>
@@ -193,6 +302,76 @@ export const record = {
       historyList.appendChild(fragment);
     } catch(e) {
       console.error('渲染精选生肖历史失败:', e);
+      const historyList = document.getElementById('selectedZodiacHistoryList');
+      if (historyList) {
+        historyList.innerHTML = '<div class="empty-tip">暂无精选生肖历史</div>';
+      }
+    }
+  },
+
+  /**
+   * 渲染ML预测历史
+   */
+  renderMLPredictionHistory: () => {
+    try {
+      const history = Storage.get('mlPredictionHistory', []);
+      const historyList = document.getElementById('mlPredictionHistoryList');
+      if (!historyList) return;
+
+      if (history.length === 0) {
+        historyList.innerHTML = '<div class="empty-tip">暂无ML预测历史</div>';
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      history.forEach((item, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'ml-prediction-history-item';
+        itemDiv.setAttribute('role', 'listitem');
+
+        const prediction = item.prediction || [];
+        const predictionHtml = prediction.map(num => {
+          const numStr = String(num).padStart(2, '0');
+          return `<span class="prediction-number">${numStr}</span>`;
+        }).join(' ') || '无数据';
+
+        itemDiv.innerHTML = `
+          <div class="ml-prediction-history-header">
+            <div class="ml-prediction-history-time">${new Date(item.timestamp || Date.now()).toLocaleString()}</div>
+            <div class="ml-prediction-history-actions">
+              <button class="action-btn" onclick="Business.copyMLPredictionHistory(${index})"><i class="icon-copy"></i> 复制</button>
+              <button class="action-btn danger" onclick="Business.deleteMLPredictionHistoryItem(${index})"><i class="icon-delete"></i> 删除</button>
+            </div>
+          </div>
+          <div class="ml-prediction-history-content">
+            <div class="prediction-numbers">
+              ${predictionHtml}
+            </div>
+            <div class="ml-prediction-info">
+              <span>模型: ${item.model || '默认'}</span>
+              <span>准确率: ${item.accuracy || 'N/A'}</span>
+            </div>
+          </div>
+        `;
+
+        fragment.appendChild(itemDiv);
+      });
+
+      historyList.innerHTML = '';
+      historyList.appendChild(fragment);
+
+      // 显示/隐藏展开更多按钮
+      const toggleBtn = document.getElementById('mlPredictionHistoryToggle');
+      if (toggleBtn) {
+        toggleBtn.style.display = history.length > 5 ? 'block' : 'none';
+      }
+    } catch(e) {
+      console.error('渲染ML预测历史失败:', e);
+      const historyList = document.getElementById('mlPredictionHistoryList');
+      if (historyList) {
+        historyList.innerHTML = '<div class="empty-tip">暂无ML预测历史</div>';
+      }
     }
   },
 
@@ -202,11 +381,11 @@ export const record = {
   renderHotNumbersHistory: () => {
     try {
       const history = Storage.get('hotNumbersHistory', []);
-      const historyList = document.getElementById('hotNumbersHistory');
+      const historyList = document.getElementById('hotNumbersHistoryList');
       if (!historyList) return;
 
       if (history.length === 0) {
-        historyList.innerHTML = '<div style="text-align:center; padding:40px; color:var(--sub-text);">暂无热门特码历史</div>';
+        historyList.innerHTML = '<div class="empty-tip">暂无热门特码历史</div>';
         return;
       }
 
@@ -217,14 +396,15 @@ export const record = {
         itemDiv.className = 'hot-numbers-history-item';
         itemDiv.setAttribute('role', 'listitem');
 
-        const hotNumbersHtml = item.hotNumbers.map((num, rank) => {
+        const hotNumbers = item.hotNumbers || [];
+        const hotNumbersHtml = hotNumbers.map((num, rank) => {
           const numStr = String(num).padStart(2, '0');
           return `<span class="hot-number rank-${rank + 1}">${numStr}</span>`;
-        }).join(' ');
+        }).join(' ') || '无数据';
 
         itemDiv.innerHTML = `
           <div class="hot-numbers-history-header">
-            <div class="hot-numbers-history-time">${new Date(item.timestamp).toLocaleString()}</div>
+            <div class="hot-numbers-history-time">${new Date(item.timestamp || Date.now()).toLocaleString()}</div>
             <div class="hot-numbers-history-actions">
               <button class="action-btn" onclick="Business.copyHotNumbersHistory(${index})"><i class="icon-copy"></i> 复制</button>
               <button class="action-btn danger" onclick="Business.deleteHotNumbersHistoryItem(${index})"><i class="icon-delete"></i> 删除</button>
@@ -235,7 +415,7 @@ export const record = {
               ${hotNumbersHtml}
             </div>
             <div class="hot-numbers-info">
-              <span>分析期数: ${item.analyzeLimit}</span>
+              <span>分析期数: ${item.analyzeLimit || '未知'}</span>
             </div>
           </div>
         `;
@@ -247,6 +427,10 @@ export const record = {
       historyList.appendChild(fragment);
     } catch(e) {
       console.error('渲染热门特码历史失败:', e);
+      const historyList = document.getElementById('hotNumbersHistoryList');
+      if (historyList) {
+        historyList.innerHTML = '<div class="empty-tip">暂无热门特码历史</div>';
+      }
     }
   },
 

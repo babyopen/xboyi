@@ -72,7 +72,9 @@ export const StateManager = {
     hotNumbersHistoryPage: 1,
     hotNumbersHistoryPageSize: 50,
     // 预测历史状态
+    zodiacPredictionHistory: [],
     zodiacPredictionHistoryExpanded: false,
+    mlPredictionHistory: [],
     mlPredictionHistoryExpanded: false
   },
 

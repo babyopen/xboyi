@@ -557,13 +557,51 @@ export const Utils = {
     
     let html = '<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-top:16px;padding:12px;background:var(--bg);border-radius:8px;">';
     if(currentPage > 1) {
-      html += `<button class="btn-mini" onclick="Business.${pageFunc}(${currentPage - 1})">上一页</button>`;
+      html += `<button class="btn-mini" onclick="Business.${pageFunc}(${currentPage - 1})")">上一页</button>`;
     }
     html += `<span style="color:var(--sub-text);font-size:13px;">第 ${currentPage} / ${totalPages} 页 (共 ${totalItems} 条)</span>`;
     if(currentPage < totalPages) {
-      html += `<button class="btn-mini" onclick="Business.${pageFunc}(${currentPage + 1})">下一页</button>`;
+      html += `<button class="btn-mini" onclick="Business.${pageFunc}(${currentPage + 1})")">下一页</button>`;
     }
     html += '</div>';
     return html;
+  },
+
+  /**
+   * 创建通用弹窗
+   * @param {Object} options - 弹窗配置
+   * @param {string} options.title - 弹窗标题
+   * @param {string} options.content - 弹窗内容
+   * @param {string} options.className - 弹窗类名
+   * @returns {HTMLElement} 弹窗元素
+   */
+  createModal: (options) => {
+    const { title, content, className = 'modal' } = options;
+    
+    // 创建弹窗容器
+    const modal = document.createElement('div');
+    modal.className = `${className}-modal`;
+    modal.innerHTML = `
+      <div class="${className}-content">
+        <div class="${className}-header">
+          <h3>${title}</h3>
+          <button class="close-btn" onclick="this.closest('.${className}-modal').remove()">×</button>
+        </div>
+        <div class="${className}-body">
+          ${content}
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 点击模态框外部关闭
+    modal.addEventListener('click', (e) => {
+      if(e.target === modal) {
+        modal.remove();
+      }
+    });
+    
+    return modal;
   }
 };
