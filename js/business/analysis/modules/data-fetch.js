@@ -5,6 +5,7 @@ import { Storage } from '../../../storage.js';
 import { StateManager } from '../../../state-manager.js';
 import { analysis } from '../../analysis.js';
 import { PerformanceMonitor } from '../../../performance-monitor.js';
+import { IssueManager } from '../../issue-manager.js';
 
 export const dataFetch = {
   /**
@@ -160,6 +161,9 @@ export const dataFetch = {
       analysis.renderFullAnalysis();
       analysis.renderZodiacAnalysis();
       analysis.updateHotColdStatus();
+      
+      // 更新预测标题
+      IssueManager.updatePredictionTitles();
       
       // 静默更新所有期数的预测历史
       import('../../prediction.js').then(({ prediction }) => {

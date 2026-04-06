@@ -502,11 +502,27 @@ if (!Business.saveFilterPrompt) {
       if(!name || !name.trim()) return;
 
       const state = StateManager._state;
+      
+      // 获取最新的期号
+      let issueNumber = null;
+      const historyData = state?.analysis?.historyData || [];
+      if (historyData.length > 0) {
+        const latestIssue = historyData[0]?.expect;
+        if (latestIssue) {
+          // 确保期号是6位数字格式
+          const issueStr = String(latestIssue).padStart(6, '0');
+          if (/^\d{6}$/.test(issueStr)) {
+            issueNumber = issueStr;
+          }
+        }
+      }
+
       const filterItem = {
         name: name.trim(),
         selected: Utils.deepClone(state.selected),
         excluded: [...state.excluded],
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        issueNumber: issueNumber
       };
 
       const success = Storage.saveFilter(filterItem);

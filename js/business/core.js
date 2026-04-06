@@ -184,11 +184,26 @@ export const core = {
     }
     if(name === null) return;
 
+    // 获取最新的期号
+    let issueNumber = null;
+    const historyData = state?.analysis?.historyData || [];
+    if (historyData.length > 0) {
+      const latestIssue = historyData[0]?.expect;
+      if (latestIssue) {
+        const issueStr = String(latestIssue).padStart(6, '0');
+        if (/^\d{6}$/.test(issueStr)) {
+          issueNumber = issueStr;
+        }
+      }
+    }
+
     const filterName = name.trim() || defaultName;
     const filterItem = {
       name: filterName,
       selected: Utils.deepClone(state.selected),
-      excluded: Utils.deepClone(state.excluded)
+      excluded: Utils.deepClone(state.excluded),
+      timestamp: Date.now(),
+      issueNumber: issueNumber
     };
 
     const success = Storage.saveFilter(filterItem);

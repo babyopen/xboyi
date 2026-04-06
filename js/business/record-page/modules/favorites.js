@@ -3,30 +3,85 @@ import { Toast } from '../../../toast.js';
 import { StateManager } from '../../../state-manager.js';
 
 export const Favorites = {
-  STORAGE_KEY: 'favorites',
+  STORAGE_KEY: 'savedFilters',
+  _currentData: [],
+
+  validateIssueNumber(issueNumber) {
+    if (!issueNumber) return false;
+    const issueStr = String(issueNumber);
+    return /^\d{6}$/.test(issueStr);
+  },
+
+  formatIssueNumber(issueNumber) {
+    if (!issueNumber) return null;
+    const issueStr = String(issueNumber).padStart(6, '0');
+    if (!this.validateIssueNumber(issueStr)) return null;
+    return issueStr;
+  },
+
+  dedupeByIssueNumber(favorites) {
+    const seen = new Map();
+    
+    favorites.forEach(favorite => {
+      const issueNumber = favorite.issueNumber;
+      if (issueNumber && this.validateIssueNumber(issueNumber)) {
+        const existing = seen.get(issueNumber);
+        if (!existing || (favorite.timestamp > existing.timestamp)) {
+          seen.set(issueNumber, favorite);
+        }
+      } else {
+        const key = JSON.stringify(favorite);
+        seen.set(key, favorite);
+      }
+    });
+
+    return Array.from(seen.values()).sort((a, b) => {
+      return (b.timestamp || 0) - (a.timestamp || 0);
+    });
+  },
 
   render() {
     try {
       const favorites = Storage.get(this.STORAGE_KEY, []);
+      const dedupedFavorites = this.dedupeByIssueNumber(favorites);
+      this._currentData = dedupedFavorites;
+      
       const favoriteList = document.getElementById('favoriteList');
       if (!favoriteList) return;
 
-      if (favorites.length === 0) {
+      if (dedupedFavorites.length === 0) {
         favoriteList.innerHTML = '<div class="empty-tip">暂无收藏</div>';
         return;
       }
 
       const fragment = document.createDocumentFragment();
 
-      favorites.forEach((favorite, index) => {
+      dedupedFavorites.forEach((favorite, index) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'filter-save-item';
         itemDiv.setAttribute('role', 'listitem');
         itemDiv.dataset.index = index;
 
+        let titleHtml = '';
+        if (favorite.issueNumber && this.validateIssueNumber(favorite.issueNumber)) {
+          titleHtml = `
+            <div class="favorite-title-group">
+              <div class="favorite-primary-title">第${favorite.issueNumber}期</div>
+              <div class="favorite-subtitle">收藏时间</div>
+            </div>
+          `;
+        } else {
+          titleHtml = `
+            <div class="favorite-title-group">
+              <div class="favorite-primary-title">${favorite.name}</div>
+              <div class="favorite-subtitle">收藏时间</div>
+            </div>
+          `;
+        }
+
         itemDiv.innerHTML = `
           <div class="filter-save-item-header">
-            <div class="filter-save-item-name">${favorite.name}</div>
+            ${titleHtml}
             <div class="filter-save-item-actions">
               <button class="action-btn" data-action="load" data-index="${index}">
                 <i class="icon-load"></i> 加载
@@ -39,7 +94,7 @@ export const Favorites = {
           <div class="filter-save-item-content">
             <div class="filter-save-item-info">
               <span>保存时间: ${new Date(favorite.timestamp).toLocaleString()}</span>
-              <span>过滤条件: ${Object.keys(favorite.filters || {}).length} 项</span>
+              <span>过滤条件: ${Object.keys(favorite.selected || {}).length} 项</span>
             </div>
           </div>
         `;
@@ -74,9 +129,7 @@ export const Favorites = {
 
   loadFavorite(index) {
     try {
-      const state = StateManager._state;
-      const favorites = Storage.get(this.STORAGE_KEY, []);
-      const favoriteItem = favorites[index];
+      const favoriteItem = this._currentData[index];
       if (!favoriteItem) return;
 
       StateManager.setState({
@@ -93,12 +146,22 @@ export const Favorites = {
 
   deleteFavorite(index) {
     try {
-      const favorites = Storage.get(this.STORAGE_KEY, []);
-      if (index < 0 || index >= favorites.length) return;
+      const itemToDelete = this._currentData[index];
+      if (!itemToDelete) return;
 
-      favorites.splice(index, 1);
-      Storage.set(this.STORAGE_KEY, favorites);
+      const allFavorites = Storage.get(this.STORAGE_KEY, []);
       
+      let filteredFavorites;
+      if (itemToDelete.issueNumber && this.validateIssueNumber(itemToDelete.issueNumber)) {
+        filteredFavorites = allFavorites.filter(item => {
+          return item.issueNumber !== itemToDelete.issueNumber;
+        });
+      } else {
+        const itemKey = JSON.stringify(itemToDelete);
+        filteredFavorites = allFavorites.filter(item => JSON.stringify(item) !== itemKey);
+      }
+      
+      Storage.set(this.STORAGE_KEY, filteredFavorites);
       this.render();
       Toast.show('删除成功');
     } catch (e) {

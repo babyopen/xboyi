@@ -7,6 +7,7 @@ import { analysis } from '../../analysis.js';
 import { PerformanceMonitor } from '../../../performance-monitor.js';
 import { Toast } from '../../../toast.js';
 import { DataQuery } from '../../../data-query.js';
+import { IssueManager } from '../../issue-manager.js';
 
 export const analysisRender = {
   /**
@@ -292,6 +293,8 @@ export const analysisRender = {
       
       if(zodiacEmptyTip) zodiacEmptyTip.style.display = 'none';
       if(zodiacContent) zodiacContent.style.display = 'block';
+      
+      IssueManager.updatePredictionTitles();
 
       // 生肖预测
       const zodiacPredictionGrid = document.getElementById('zodiacPredictionGrid');
