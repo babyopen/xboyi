@@ -1,0 +1,493 @@
+// ====================== 10. 事件绑定模块（统一事件管理，支持键盘/触摸）======================
+
+// 导入必要的模块
+import { Business } from './business/index.js';
+import { DOM } from './dom.js';
+import { Utils } from './utils.js';
+import { CONFIG } from './config.js';
+import { StateManager } from './state-manager.js';
+import { DataQuery } from './data-query.js';
+import { Filter } from './filter.js';
+import { Toast } from './toast.js';
+
+export const EventBinder = {
+  /**
+   * 初始化所有事件绑定
+   */
+  // 触摸滑动相关状态
+  _touchStartX: 0,
+  _touchStartY: 0,
+  _touchEndX: 0,
+  _touchEndY: 0,
+  _minSwipeDistance: 50, // 最小滑动距离
+  _edgeSwipeWidth: 30,   // 边缘滑动检测宽度
+
+  init: () => {
+    // 全局点击事件委托
+    document.addEventListener('click', EventBinder.handleGlobalClick);
+    // 键盘回车/空格事件（无障碍支持）
+    document.addEventListener('keydown', EventBinder.handleKeyDown);
+    // 滚动事件（已节流）
+    window.addEventListener('scroll', Business.handleScroll);
+    // 点击空白关闭快捷导航
+    document.addEventListener('click', EventBinder.handleClickOutside);
+    // 页面卸载清理
+    window.addEventListener('beforeunload', Business.handlePageUnload);
+    // 全局错误捕获
+    window.addEventListener('error', EventBinder.handleGlobalError);
+    
+    // 添加触摸滑动事件监听（用于分析页面标签切换）
+    document.addEventListener('touchstart', EventBinder.handleTouchStart, { passive: true });
+    document.addEventListener('touchend', EventBinder.handleTouchEnd, { passive: true });
+    
+
+    
+    // 分析页面：全维度分析选择器change事件
+    const analyzeSelect = document.getElementById('analyzeSelect');
+    if(analyzeSelect) {
+      analyzeSelect.addEventListener('change', function() {
+        Business.syncAnalyze();
+      });
+    }
+    
+    // 分析页面：特码生肖关联选择器change事件
+    const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
+    if(zodiacAnalyzeSelect) {
+      zodiacAnalyzeSelect.addEventListener('change', function() {
+        Business.syncZodiacAnalyze();
+      });
+    }
+    
+    // 分析页面：号码数量选择器change事件
+    const numCountSelect = document.getElementById('numCountSelect');
+    const customNumCount = document.getElementById('customNumCount');
+    
+    if(numCountSelect) {
+      numCountSelect.addEventListener('change', function() {
+        const isCustom = this.value === 'custom';
+        if(customNumCount) customNumCount.style.display = isCustom ? 'inline-block' : 'none';
+        if(!isCustom) {
+          const newAnalysis = { 
+            ...StateManager._state.analysis, 
+            selectedNumCount: Number(this.value)
+          };
+          StateManager.setState({ analysis: newAnalysis }, false);
+          Business.renderZodiacAnalysis();
+        }
+      });
+    }
+    
+    if(customNumCount) {
+      customNumCount.addEventListener('input', function() {
+        const val = this.value.trim();
+        if(val && !isNaN(val) && Number(val) >= 1 && Number(val) <= 49) {
+          const newAnalysis = { 
+            ...StateManager._state.analysis, 
+            selectedNumCount: Number(val)
+          };
+          StateManager.setState({ analysis: newAnalysis }, false);
+          Business.renderZodiacAnalysis();
+        }
+      });
+    }
+  },
+
+  /**
+   * 全局点击处理
+   * @param {MouseEvent} e - 点击事件
+   */
+  handleGlobalClick: (e) => {
+    const target = e.target;
+
+    // 1. 筛选标签点击
+    const tag = target.closest('.tag[data-group]');
+    if(tag){
+      const group = tag.dataset.group;
+      const rawValue = tag.dataset.value;
+      const value = Utils.formatTagValue(rawValue, group);
+      StateManager.updateSelected(group, value);
+      return;
+    }
+
+    // 2. 排除号码点击
+    const excludeTag = target.closest('.exclude-tag[data-num]');
+    if(excludeTag){
+      Business.toggleExclude(Number(excludeTag.dataset.num));
+      return;
+    }
+
+    // 3. 快捷导航跳转
+    const navTab = target.closest('.nav-tab[data-target]');
+    if(navTab){
+      const targetId = navTab.dataset.target;
+      Business.scrollToModule(targetId);
+      return;
+    }
+
+    // 4. 快捷导航开关
+    if(target === DOM.quickNavBtn || target.closest('#quickNavBtn')){
+      Business.toggleQuickNav();
+      return;
+    }
+
+    // 5. 返回顶部
+    if(target === DOM.backTopBtn){
+      Business.backToTop();
+      return;
+    }
+
+    // 6. 按钮动作处理（用枚举避免硬编码错误）
+    const actionBtn = target.closest('[data-action]');
+    if(actionBtn){
+      const action = actionBtn.dataset.action;
+      const group = actionBtn.dataset.group;
+      const index = actionBtn.dataset.index;
+      
+      // 分组操作
+      if(action === CONFIG.ACTIONS.RESET_GROUP) StateManager.resetGroup(group);
+      if(action === CONFIG.ACTIONS.SELECT_GROUP) StateManager.selectGroup(group);
+      if(action === CONFIG.ACTIONS.INVERT_GROUP) StateManager.invertGroup(group);
+      if(action === CONFIG.ACTIONS.CLEAR_GROUP) StateManager.resetGroup(group);
+      // 全局操作
+      if(action === CONFIG.ACTIONS.SELECT_ALL) Filter.selectAllFilters();
+      if(action === CONFIG.ACTIONS.CLEAR_ALL) Filter.clearAllFilters();
+      if(action === CONFIG.ACTIONS.SAVE_FILTER) Business.saveFilterPrompt();
+      // 排除号码操作
+      if(action === CONFIG.ACTIONS.INVERT_EXCLUDE) Business.invertExclude();
+      if(action === CONFIG.ACTIONS.UNDO_EXCLUDE) Business.undoExclude();
+      if(action === CONFIG.ACTIONS.BATCH_EXCLUDE) Business.batchExcludePrompt();
+      if(action === CONFIG.ACTIONS.CLEAR_EXCLUDE) Business.clearExclude();
+      // 方案操作
+      if(action === CONFIG.ACTIONS.TOGGLE_SHOW_ALL) Business.toggleShowAllFilters();
+      if(action === CONFIG.ACTIONS.LOAD_FILTER) Business.loadFilter(Number(index));
+      if(action === CONFIG.ACTIONS.RENAME_FILTER) Business.renameFilter(Number(index));
+      if(action === CONFIG.ACTIONS.COPY_FILTER) Business.copyFilterNums(Number(index));
+      if(action === CONFIG.ACTIONS.TOP_FILTER) Business.topFilter(Number(index));
+      // 收藏操作
+      if(action === 'favoriteFilter') Business.favoriteFilter(Number(index));
+      if(action === 'loadFavorite') Business.loadFavorite(Number(index));
+      if(action === 'renameFavorite') Business.renameFavorite(Number(index));
+      if(action === 'copyFavorite') Business.copyFavorite(Number(index));
+      // 导航操作
+      if(action === CONFIG.ACTIONS.SWITCH_NAV) Business.switchBottomNav(actionBtn.dataset.page || actionBtn.dataset.target);
+      // 我的页面菜单操作
+      if(action === 'openSettings') Business.openSettings();
+      if(action === 'openNotification') Business.openNotification();
+      if(action === 'openPrivacy') Business.openPrivacy();
+      if(action === 'clearCache') Business.clearCache();
+      if(action === 'openHelp') Business.openHelp();
+      if(action === 'openFeedback') Business.openFeedback();
+      if(action === 'openAbout') Business.openAbout();
+      if(action === 'checkUpdate') Business.checkUpdate();
+      // 分析页面操作
+      if(action === 'refreshHistory') Business.refreshHistory();
+      if(action === 'syncAnalyze') Business.syncAnalyze();
+      if(action === 'syncZodiacAnalyze') Business.syncZodiacAnalyze();
+      if(action === 'toggleDetail') Business.toggleDetail(actionBtn.dataset.target);
+      if(action === 'loadMoreHistory') Business.loadMoreHistory();
+      if(action === 'copyHotNumbers') Business.copyHotNumbers();
+      if(action === 'copyZodiacNumbers') Business.copyZodiacNumbers();
+      if(action === 'favoriteZodiacNumbers') Business.favoriteZodiacNumbers();
+      if(action === 'refreshHotCold') Business.refreshHotCold();
+      // 全选预测历史期数
+      if(action === 'selectAllPredictionPeriods') Business.selectAllPredictionPeriods();
+      // 重置预测历史期数
+      if(action === 'resetPredictionPeriods') Business.resetPredictionPeriods();
+      // 切换预测历史筛选面板展开/折叠
+      if(action === 'togglePredictionFiltersPanel') Business.togglePredictionFiltersPanel();
+      // 确认预测历史筛选条件
+      if(action === 'confirmPredictionFilters') Business.confirmPredictionFilters();
+      // 切换预测历史展开/折叠
+      if(action === 'toggleZodiacPredictionHistory') Business.toggleZodiacPredictionHistory();
+      // 预测统计操作
+      if(action === 'refreshPredictionStatistics') {
+        Business.checkAndUpdatePredictionStatus();
+        Business.updateSelectedZodiacHistoryComparison();
+        Business.renderPredictionStatistics();
+        Business.renderSelectedZodiacHistory();
+      }
+      // ML预测历史操作
+      if(action === 'toggleMLPredictionHistory') Business.toggleMLPredictionHistory();
+      if(action === 'refreshMLPredictionHistory') {
+        Business.checkAndUpdatePredictionStatus();
+        Business.renderMLPredictionHistory();
+      }
+      // 精选特码历史操作
+      if(action === 'toggleSpecialHistory') Business.toggleSpecialHistory();
+      if(action === 'toggleSpecialFiltersPanel') Business.toggleSpecialFiltersPanel();
+      if(action === 'confirmSpecialFilters') Business.confirmSpecialFilters();
+      // 切换精选特码历史模式筛选
+      if(action === 'switchSpecialHistoryMode') Business.switchSpecialHistoryMode(actionBtn.dataset.mode);
+      // 显示连出详情
+      if(action === 'showStreakDetail') Business.showStreakDetail(actionBtn.dataset.streakType);
+      // 显示统计详情
+      if(action === 'showStatDetail') Business.showStatDetail(actionBtn.dataset.statType);
+      // 切换精选特码模式
+      if(action === 'switchSpecialMode') Business.switchSpecialMode(actionBtn.dataset.mode);
+      // 精选生肖历史操作
+      if(action === 'toggleSelectedZodiacHistory') Business.toggleSelectedZodiacHistory();
+      // 特码热门top5历史操作
+      if(action === 'toggleHotNumbersHistory') Business.toggleHotNumbersHistory();
+      if(action === 'switchHotNumbersHistoryPage') Business.switchHotNumbersHistoryPage(Number(actionBtn.dataset.page));
+      return;
+    }
+
+    // 7. 分析标签页切换
+    const analysisTabBtn = target.closest('.analysis-tab-btn[data-analysis-tab]');
+    if(analysisTabBtn){
+      Business.switchAnalysisTab(analysisTabBtn.dataset.analysisTab);
+      return;
+    }
+
+    // 8. 加载更多历史
+    const loadMoreBtn = target.closest('#loadMore');
+    if(loadMoreBtn){
+      Business.loadMoreHistory();
+      return;
+    }
+
+    // 9. 生肖预测项点击
+    const zodiacItem = target.closest('.zodiac-prediction-item[data-zodiac]');
+    if(zodiacItem){
+      const zodiac = zodiacItem.dataset.zodiac;
+      Business.showZodiacDetail(zodiac);
+      return;
+    }
+
+    // 10. 数字标签点击（支持number-tag和history-tag）
+    const numberTag = target.closest('.number-tag, .history-tag');
+    if(numberTag){
+      const text = numberTag.innerText.trim();
+      
+      // 检查是否是数字
+      if(!isNaN(text)) {
+        try {
+          const num = parseInt(text);
+          const attrs = DataQuery.getNumAttrs(num);
+          const color = attrs.color;
+          const element = attrs.element;
+          const zodiac = attrs.zodiac;
+          const colorClass = color === '红' ? 'red' : color === '蓝' ? 'blue' : 'green';
+          
+          // 创建弹窗显示数字信息
+          const modal = document.createElement('div');
+          modal.className = 'modal-overlay';
+
+          // 生成数字球的HTML
+          let ballHtml = `
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3 class="modal-title">号码详情</h3>
+                <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+              </div>
+              
+              <div style="display:flex; flex-direction:column; align-items:center; gap:16px; padding:20px 0;">
+                <div class="ball ${colorClass}">${String(num).padStart(2, '0')}</div>
+                <div style="font-size:16px; color:var(--text); text-align:center; font-weight:500;">${zodiac} / ${element}</div>
+              </div>
+            </div>
+          `;
+
+          modal.innerHTML = ballHtml;
+
+          modal.addEventListener('click', (e) => {
+            if(e.target === modal) modal.remove();
+          });
+
+          document.body.appendChild(modal);
+        } catch (error) {
+          console.error('处理数字标签点击时出错:', error);
+          Toast.show('处理点击时出错', 2000);
+        }
+      } else {
+        // 检查是否是生肖
+        const zodiac = text;
+        const zodiacNumbers = [];
+        
+        // 获取该生肖对应的所有数字
+        for(let num = 1; num <= 49; num++) {
+          const attrs = DataQuery.getNumAttrs(num);
+          if(attrs.zodiac === zodiac) {
+            zodiacNumbers.push(num);
+          }
+        }
+        
+        if(zodiacNumbers.length > 0) {
+          // 创建弹窗显示生肖对应的数字
+          const modal = document.createElement('div');
+          modal.className = 'modal-overlay';
+
+          // 生成数字球的HTML
+          let ballsHtml = `
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3 class="modal-title">生肖：${zodiac}</h3>
+                <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+              </div>
+              
+              <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; padding:10px 0;">
+          `;
+          
+          zodiacNumbers.forEach(num => {
+            const attrs = DataQuery.getNumAttrs(num);
+            const color = attrs.color;
+            const element = attrs.element;
+            const colorClass = color === '红' ? 'red' : color === '蓝' ? 'blue' : 'green';
+            
+            ballsHtml += `
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                <div class="ball ${colorClass}">${String(num).padStart(2, '0')}</div>
+                <div style="font-size:11px; color:var(--sub-text); text-align:center; font-weight:500;">${element}</div>
+              </div>
+            `;
+          });
+          
+          ballsHtml += `
+              </div>
+            </div>
+          `;
+
+          modal.innerHTML = ballsHtml;
+
+          modal.addEventListener('click', (e) => {
+            if(e.target === modal) modal.remove();
+          });
+
+          document.body.appendChild(modal);
+        } else {
+          Toast.show('未找到该生肖对应的数字', 2000);
+        }
+      }
+      return;
+    }
+
+    // 11. 可展开/折叠的span和div元素
+    const collapsibleElement = target.closest('[data-toggle-target]');
+    if(collapsibleElement){
+      const targetId = collapsibleElement.dataset.toggleTarget;
+      Business.toggleDetail(targetId);
+      return;
+    }
+
+    // 11. 预测历史期数按钮
+    const predictionPeriodBtn = target.closest('.prediction-period-btn[data-period]');
+    if(predictionPeriodBtn){
+      Business.toggleButtonState(predictionPeriodBtn);
+      Business.savePredictionHistoryFilter();
+      Business.renderZodiacPredictionHistory();
+      return;
+    }
+
+    // 13. 精选特码历史期数按钮
+    const specialPeriodBtn = target.closest('.special-period-btn[data-period]');
+    if(specialPeriodBtn){
+      Business.toggleRadioButtonGroup(specialPeriodBtn, '.special-period-btn');
+      Business.saveSpecialHistoryFilter();
+      Business.renderSpecialHistory();
+      return;
+    }
+
+    // 14. 精选特码历史号码数量按钮
+    const specialNumBtn = target.closest('.special-num-btn[data-num]');
+    if(specialNumBtn){
+      Business.toggleRadioButtonGroup(specialNumBtn, '.special-num-btn');
+      Business.saveSpecialHistoryFilter();
+      Business.renderSpecialHistory();
+      return;
+    }
+  },
+
+  /**
+   * 键盘事件处理（无障碍支持，回车/空格触发可交互元素）
+   * @param {KeyboardEvent} e - 键盘事件
+   */
+  handleKeyDown: (e) => {
+    // 仅处理回车和空格
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    
+    const target = e.target;
+    // 可交互元素
+    const isInteractive = target.matches('.tag, .exclude-tag, .btn-mini, .btn-line, .nav-tab, .nav-toggle-btn, .back-top-btn, .filter-expand, .filter-item-btns button, .bottom-nav-item');
+    
+    if(isInteractive){
+      e.preventDefault();
+      target.click();
+    }
+  },
+
+  /**
+   * 点击空白关闭快捷导航
+   * @param {MouseEvent} e - 点击事件
+   */
+  handleClickOutside: (e) => {
+    const quickNavBtn = document.getElementById('quickNavBtn');
+    const quickNavMenu = document.getElementById('quickNavMenu');
+    if(quickNavMenu && quickNavMenu.classList.contains('show')){
+      if(!quickNavMenu.contains(e.target) && !quickNavBtn.contains(e.target)){
+        Business.toggleQuickNav(false);
+      }
+    }
+  },
+
+  /**
+   * 全局错误捕获
+   * @param {ErrorEvent} e - 错误事件
+   */
+  handleGlobalError: (e) => {
+    console.error('全局错误', e.error);
+    Toast.show('页面出现异常，请刷新重试');
+  },
+
+  /**
+   * 触摸开始事件处理
+   * @param {TouchEvent} e - 触摸事件
+   */
+  handleTouchStart: (e) => {
+    EventBinder._touchStartX = e.changedTouches[0].screenX;
+    EventBinder._touchStartY = e.changedTouches[0].screenY;
+  },
+
+  /**
+   * 触摸结束事件处理（实现边缘滑动切换标签）
+   * @param {TouchEvent} e - 触摸事件
+   */
+  handleTouchEnd: (e) => {
+    EventBinder._touchEndX = e.changedTouches[0].screenX;
+    EventBinder._touchEndY = e.changedTouches[0].screenY;
+    
+    // 检查是否在分析页面
+    const analysisPage = document.getElementById('analysisPage');
+    if(!analysisPage || analysisPage.style.display === 'none') return;
+    
+    // 获取当前激活的标签
+    const activeTabBtn = document.querySelector('.analysis-tab-btn.active');
+    if(!activeTabBtn) return;
+    
+    const currentTab = activeTabBtn.dataset.analysisTab;
+    const tabs = ['history', 'analysis', 'zodiac'];
+    const tabNames = ['历史记录', '维度分析', '生肖关联'];
+    const currentIndex = tabs.indexOf(currentTab);
+    if(currentIndex === -1) return;
+    
+    const screenWidth = window.innerWidth;
+    const startX = EventBinder._touchStartX;
+    const endX = EventBinder._touchEndX;
+    const deltaX = endX - startX;
+    const deltaY = EventBinder._touchEndY - EventBinder._touchStartY;
+    
+    // 检查是否为水平滑动（Y轴偏移不能太大）
+    if(Math.abs(deltaY) > Math.abs(deltaX)) return;
+    
+    // 检查滑动距离是否足够
+    if(Math.abs(deltaX) < EventBinder._minSwipeDistance) return;
+    
+    // 从左边缘向右滑动 - 切换到上一个标签
+    if(deltaX > 0 && startX < EventBinder._edgeSwipeWidth && currentIndex > 0) {
+      Business.switchAnalysisTab(tabs[currentIndex - 1]);
+    }
+    // 从右边缘向左滑动 - 切换到下一个标签
+    else if(deltaX < 0 && startX > screenWidth - EventBinder._edgeSwipeWidth && currentIndex < tabs.length - 1) {
+      Business.switchAnalysisTab(tabs[currentIndex + 1]);
+    }
+  }
+};
