@@ -513,5 +513,14 @@ if (!Business.switchBottomNav) {
     document.querySelectorAll('.bottom-nav-item').forEach((btn, i) => {
       btn.classList.toggle('active', i === index);
     });
+    
+    // 如果切换到记录页面，完整渲染所有记录
+    if (index === 2) {
+      try {
+        Business.renderAllRecords();
+      } catch (e) {
+        console.error('渲染记录页面失败:', e);
+      }
+    }
   };
 }

@@ -334,6 +334,15 @@ if (!Business.switchBottomNav) {
       if (activeBtn) {
         activeBtn.classList.add('active');
       }
+
+      // 如果切换到记录页面，完整渲染所有记录
+      if (pageId === 'recordPage') {
+        try {
+          Business.renderAllRecords();
+        } catch (e) {
+          console.error('渲染记录页面失败:', e);
+        }
+      }
     } catch(e) {
       console.error('切换底部导航失败:', e);
     }
