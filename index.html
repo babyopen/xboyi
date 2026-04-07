@@ -539,21 +539,150 @@
 
     <!-- 标签栏 -->
     <div class="analysis-tab-bar">
-      <button class="analysis-tab-btn active" id="tabHistory" data-analysis-tab="history">历史记录</button>
+      <button class="analysis-tab-btn active" id="tabZodiac" data-analysis-tab="zodiac">生肖关联</button>
       <button class="analysis-tab-btn" id="tabAnalysis" data-analysis-tab="analysis">维度分析</button>
-      <button class="analysis-tab-btn" id="tabZodiac" data-analysis-tab="zodiac">生肖关联</button>
+      <button class="analysis-tab-btn" id="tabHistory" data-analysis-tab="history">历史记录</button>
     </div>
 
-    <!-- 1. 历史记录模块 -->
-      <!-- 1. 历史记录模块 -->
-      <div class="analysis-tab-panel active" id="historyPanel">
+    <!-- 1. 生肖关联模块 -->
+      <div class="analysis-tab-panel active" id="zodiacAnalysisPanel">
         <div class="analysis-card">
           <div class="analysis-card-title-row">
-            <div class="analysis-card-title">历史记录</div>
-            <button class="analysis-refresh-btn" data-action="refreshHistory">刷新历史</button>
+            <div class="analysis-card-title" style="color:#13a662;">生肖·尾数关联</div>
           </div>
-          <div id="historyList">加载中...</div>
-          <div id="loadMore" class="load-more" style="display:none;">点击加载更多</div>
+          <!-- 期数+号码数量双筛选栏 -->
+          <div class="analysis-filter-bar">
+            <select id="zodiacAnalyzeSelect" class="analysis-filter-select">
+              <option value="10" selected>最近10期</option>
+              <option value="20">最近20期</option>
+              <option value="30">最近30期</option>
+              <option value="all">全年数据</option>
+            </select>
+            <input type="number" id="zodiacCustomNum" class="analysis-filter-input" placeholder="自定义期数">
+            <!-- 号码数量选择器 -->
+            <select id="numCountSelect" class="analysis-filter-select">
+              <option value="5" selected>5个号</option>
+              <option value="10">10个号</option>
+              <option value="15">15个号</option>
+              <option value="20">20个号</option>
+              <option value="custom">自定义</option>
+            </select>
+            <input type="number" id="customNumCount" class="analysis-filter-input" placeholder="自定义数量" style="display:none;">
+            <button class="analysis-filter-btn" data-action="syncZodiacAnalyze">确认</button>
+          </div>
+
+          <div class="empty-tip" id="zodiacEmptyTip">暂无开奖历史数据</div>
+          <div id="zodiacContent" style="display:none;">
+            <div class="zodiac-prediction">
+              <div class="conclusion-title">🔮 生肖预测</div>
+              <div id="zodiacPredictionGrid" class="zodiac-prediction-grid"></div>
+            </div>
+
+            <div class="selected-zodiacs">
+              <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>✨ 精选生肖</span>
+                <button class="btn-mini copy-zodiacs-btn" onclick="Business.copySelectedZodiacs()" title="复制生肖" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  复制
+                </button>
+              </div>
+              <div id="selectedZodiacsGrid" class="selected-zodiacs-grid"></div>
+            </div>
+
+            <!-- 生肖预测2.0模块 (ML模型) -->
+            <div class="zodiac-prediction-v2">
+              <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>🚀 生肖预测2.0 (ML模型)</span>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <!-- 服务状态指示器 -->
+                  <span id="mlServiceStatus" class="service-status" style="font-size:12px;padding:4px 8px;border-radius:4px;background:#ff6b6b;color:white;">
+                    🔴 服务未启动
+                  </span>
+                  <!-- 启动模型按钮 -->
+                  <button id="mlStartBtn" class="btn-mini" onclick="Business.startMLService()" title="启动ML模型服务" style="background:#2196F3;color:white;display:inline-flex;align-items:center;gap:4px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    启动服务
+                  </button>
+                  <!-- ML预测按钮 -->
+                  <button id="mlPredictBtn" class="btn-mini ml-predict-btn" onclick="Business.runMLPrediction()" title="运行ML预测" style="background:#4CAF50;color:white;display:inline-flex;align-items:center;gap:4px;" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    ML预测
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 启动说明区域 -->
+              <div id="mlStartInstructions" style="display:none;margin-bottom:15px;padding:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;">
+                <div style="font-weight:bold;color:#856404;margin-bottom:8px;">📋 启动步骤</div>
+                <div style="font-size:13px;color:#856404;line-height:1.6;">
+                  1. 打开终端，进入项目目录<br>
+                  2. 执行命令：<code style="background:#fff;padding:2px 6px;border-radius:3px;">python3 python/ml_api_server.py</code><br>
+                  3. 等待显示"模型加载成功"<br>
+                  4. 服务将自动检测到并变为就绪状态
+                </div>
+                <div style="margin-top:10px;">
+                  <button class="btn-mini" onclick="Business.copyMLStartCommand()" style="background:#ffc107;color:#333;">
+                    📋 复制启动命令
+                  </button>
+                  <button class="btn-mini" onclick="Business.toggleMLInstructions()" style="margin-left:8px;">
+                    关闭说明
+                  </button>
+                </div>
+              </div>
+              
+              <!-- ML预测结果区域 -->
+              <div id="mlPredictionResult" style="display:none;margin-bottom:15px;padding:15px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:8px;color:white;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <span style="font-weight:bold;font-size:16px;">🤖 ML模型预测结果</span>
+                  <span id="mlPredictionTime" style="font-size:12px;opacity:0.8;"></span>
+                </div>
+                <div id="mlPredictionContent"></div>
+              </div>
+            </div>
+
+            <div class="core-conclusion">
+              <div class="conclusion-title">🔥 特码真实共振组合</div>
+              <div class="conclusion-item" id="combo1">1. 首选：--</div>
+              <div class="conclusion-item" id="combo2">2. 次选：--</div>
+              <div class="conclusion-item" id="combo3">3. 备选：--</div>
+            </div>
+
+            <div class="analysis-sub-title" style="color:#13a662;">① 特码尾数 → 特码生肖真实关联</div>
+            <div class="data-grid-z" id="tailZodiacGrid"></div>
+
+            <div class="analysis-sub-title" style="color:#13a662;">② 上期特码生肖 → 本期特码生肖跟随</div>
+            <table class="follow-table-z" id="zodiacFollowTable"></table>
+
+            <div class="analysis-sub-title" style="color:#13a662;">③ 12生肖特码冷热统计</div>
+            <div class="data-grid-z data-grid-4" id="zodiacTotalGrid"></div>
+
+            <div class="analysis-sub-title" style="color:#13a662;">④ 高遗漏生肖（反弹关注）</div>
+            <div class="data-grid-z data-grid-3" id="zodiacMissGrid"></div>
+
+            <div class="final-recommend-z" id="zodiacFinalNum" style="position:relative;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+                <span>✅ 精选特码：</span>
+                <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+                  <!-- 模式切换按钮组 -->
+                  <div class="mode-switch-btns" style="display:flex;gap:4px;margin-right:8px;">
+                    <button class="btn-mini mode-btn active" data-mode="hot" data-action="switchSpecialMode" title="🔥 热号模式">🔥</button>
+                    <button class="btn-mini mode-btn" data-mode="cold" data-action="switchSpecialMode" title="❄️ 冷号反弹">❄️</button>
+                    <button class="btn-mini mode-btn" data-mode="auto" data-action="switchSpecialMode" title="🤖 自动模式">🤖</button>
+                  </div>
+                  <button class="btn-mini" data-action="copyZodiacNumbers" style="flex-shrink:0;">复制</button>
+                  <button class="btn-mini" data-action="favoriteZodiacNumbers" style="flex-shrink:0;">收藏</button>
+                </div>
+              </div>
+              <div id="zodiacFinalNumContent">--</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -732,145 +861,15 @@
         </div>
       </div>
 
-      <!-- 3. 生肖关联模块 -->
-      <div class="analysis-tab-panel" id="zodiacAnalysisPanel">
+      <!-- 3. 历史记录模块 -->
+      <div class="analysis-tab-panel" id="historyPanel">
         <div class="analysis-card">
           <div class="analysis-card-title-row">
-            <div class="analysis-card-title" style="color:#13a662;">生肖·尾数关联</div>
+            <div class="analysis-card-title">历史记录</div>
+            <button class="analysis-refresh-btn" data-action="refreshHistory">刷新历史</button>
           </div>
-          <!-- 期数+号码数量双筛选栏 -->
-          <div class="analysis-filter-bar">
-            <select id="zodiacAnalyzeSelect" class="analysis-filter-select">
-              <option value="10" selected>最近10期</option>
-              <option value="20">最近20期</option>
-              <option value="30">最近30期</option>
-              <option value="all">全年数据</option>
-            </select>
-            <input type="number" id="zodiacCustomNum" class="analysis-filter-input" placeholder="自定义期数">
-            <!-- 号码数量选择器 -->
-            <select id="numCountSelect" class="analysis-filter-select">
-              <option value="5" selected>5个号</option>
-              <option value="10">10个号</option>
-              <option value="15">15个号</option>
-              <option value="20">20个号</option>
-              <option value="custom">自定义</option>
-            </select>
-            <input type="number" id="customNumCount" class="analysis-filter-input" placeholder="自定义数量" style="display:none;">
-            <button class="analysis-filter-btn" data-action="syncZodiacAnalyze">确认</button>
-          </div>
-
-          <div class="empty-tip" id="zodiacEmptyTip">暂无开奖历史数据</div>
-          <div id="zodiacContent" style="display:none;">
-            <div class="zodiac-prediction">
-              <div class="conclusion-title">🔮 生肖预测</div>
-              <div id="zodiacPredictionGrid" class="zodiac-prediction-grid"></div>
-            </div>
-
-            <div class="selected-zodiacs">
-              <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
-                <span>✨ 精选生肖</span>
-                <button class="btn-mini copy-zodiacs-btn" onclick="Business.copySelectedZodiacs()" title="复制生肖" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                  复制
-                </button>
-              </div>
-              <div id="selectedZodiacsGrid" class="selected-zodiacs-grid"></div>
-            </div>
-
-            <!-- 生肖预测2.0模块 (ML模型) -->
-            <div class="zodiac-prediction-v2">
-              <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
-                <span>🚀 生肖预测2.0 (ML模型)</span>
-                <div style="display:flex;gap:6px;align-items:center;">
-                  <!-- 服务状态指示器 -->
-                  <span id="mlServiceStatus" class="service-status" style="font-size:12px;padding:4px 8px;border-radius:4px;background:#ff6b6b;color:white;">
-                    🔴 服务未启动
-                  </span>
-                  <!-- 启动模型按钮 -->
-                  <button id="mlStartBtn" class="btn-mini" onclick="Business.startMLService()" title="启动ML模型服务" style="background:#2196F3;color:white;display:inline-flex;align-items:center;gap:4px;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                    启动服务
-                  </button>
-                  <!-- ML预测按钮 -->
-                  <button id="mlPredictBtn" class="btn-mini ml-predict-btn" onclick="Business.runMLPrediction()" title="运行ML预测" style="background:#4CAF50;color:white;display:inline-flex;align-items:center;gap:4px;" disabled>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    ML预测
-                  </button>
-                </div>
-              </div>
-              
-              <!-- 启动说明区域 -->
-              <div id="mlStartInstructions" style="display:none;margin-bottom:15px;padding:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;">
-                <div style="font-weight:bold;color:#856404;margin-bottom:8px;">📋 启动步骤</div>
-                <div style="font-size:13px;color:#856404;line-height:1.6;">
-                  1. 打开终端，进入项目目录<br>
-                  2. 执行命令：<code style="background:#fff;padding:2px 6px;border-radius:3px;">python3 python/ml_api_server.py</code><br>
-                  3. 等待显示"模型加载成功"<br>
-                  4. 服务将自动检测到并变为就绪状态
-                </div>
-                <div style="margin-top:10px;">
-                  <button class="btn-mini" onclick="Business.copyMLStartCommand()" style="background:#ffc107;color:#333;">
-                    📋 复制启动命令
-                  </button>
-                  <button class="btn-mini" onclick="Business.toggleMLInstructions()" style="margin-left:8px;">
-                    关闭说明
-                  </button>
-                </div>
-              </div>
-              
-              <!-- ML预测结果区域 -->
-              <div id="mlPredictionResult" style="display:none;margin-bottom:15px;padding:15px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:8px;color:white;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                  <span style="font-weight:bold;font-size:16px;">🤖 ML模型预测结果</span>
-                  <span id="mlPredictionTime" style="font-size:12px;opacity:0.8;"></span>
-                </div>
-                <div id="mlPredictionContent"></div>
-              </div>
-            </div>
-
-            <div class="core-conclusion">
-              <div class="conclusion-title">🔥 特码真实共振组合</div>
-              <div class="conclusion-item" id="combo1">1. 首选：--</div>
-              <div class="conclusion-item" id="combo2">2. 次选：--</div>
-              <div class="conclusion-item" id="combo3">3. 备选：--</div>
-            </div>
-
-            <div class="analysis-sub-title" style="color:#13a662;">① 特码尾数 → 特码生肖真实关联</div>
-            <div class="data-grid-z" id="tailZodiacGrid"></div>
-
-            <div class="analysis-sub-title" style="color:#13a662;">② 上期特码生肖 → 本期特码生肖跟随</div>
-            <table class="follow-table-z" id="zodiacFollowTable"></table>
-
-            <div class="analysis-sub-title" style="color:#13a662;">③ 12生肖特码冷热统计</div>
-            <div class="data-grid-z data-grid-4" id="zodiacTotalGrid"></div>
-
-            <div class="analysis-sub-title" style="color:#13a662;">④ 高遗漏生肖（反弹关注）</div>
-            <div class="data-grid-z data-grid-3" id="zodiacMissGrid"></div>
-
-            <div class="final-recommend-z" id="zodiacFinalNum" style="position:relative;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-                <span>✅ 精选特码：</span>
-                <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
-                  <!-- 模式切换按钮组 -->
-                  <div class="mode-switch-btns" style="display:flex;gap:4px;margin-right:8px;">
-                    <button class="btn-mini mode-btn active" data-mode="hot" data-action="switchSpecialMode" title="🔥 热号模式">🔥</button>
-                    <button class="btn-mini mode-btn" data-mode="cold" data-action="switchSpecialMode" title="❄️ 冷号反弹">❄️</button>
-                    <button class="btn-mini mode-btn" data-mode="auto" data-action="switchSpecialMode" title="🤖 自动模式">🤖</button>
-                  </div>
-                  <button class="btn-mini" data-action="copyZodiacNumbers" style="flex-shrink:0;">复制</button>
-                  <button class="btn-mini" data-action="favoriteZodiacNumbers" style="flex-shrink:0;">收藏</button>
-                </div>
-              </div>
-              <div id="zodiacFinalNumContent">--</div>
-            </div>
-          </div>
+          <div id="historyList">加载中...</div>
+          <div id="loadMore" class="load-more" style="display:none;">点击加载更多</div>
         </div>
       </div>
     </div>

@@ -489,28 +489,6 @@ export const prediction = {
     // 这里需要完整的实现...
   },
 
-  // 生肖预测历史相关 - 已移除
-  saveZodiacPredictionHistory: (sortedZodiacs, zodiacDetails) => {
-    console.log('生肖预测历史功能已移除');
-  },
-
-  renderZodiacPredictionHistory: () => {
-    console.log('生肖预测历史功能已移除');
-  },
-
-  toggleZodiacPredictionHistory: () => {
-    // 这里需要完整的实现...
-  },
-
-  savePredictionHistoryFilter: (filter) => {
-    // 这里需要完整的实现...
-  },
-
-  loadPredictionHistoryFilter: () => {
-    // 这里需要完整的实现...
-    return null;
-  },
-
   /**
    * 加载精选特码历史筛选状态
    */
@@ -519,18 +497,6 @@ export const prediction = {
   },
 
   silentUpdateAllPredictionHistory: () => {
-    // 这里需要完整的实现...
-  },
-
-  clearZodiacPredictionHistory: () => {
-    // 这里需要完整的实现...
-  },
-
-  deleteZodiacPredictionHistoryItem: (index) => {
-    // 这里需要完整的实现...
-  },
-
-  copyZodiacPredictionHistory: (index) => {
     // 这里需要完整的实现...
   },
 
@@ -618,21 +584,7 @@ export const prediction = {
     }
   },
 
-  /**
-   * 后台静默保存精选生肖 - 已移除
-   */
-  silentSaveAllSelectedZodiacs: () => {
-    console.log('精选生肖历史功能已移除');
-  },
 
-  /**
-   * 核对精选生肖与开奖结果 - 已移除
-   * @param {string} issue - 期数
-   * @param {string} result - 开奖结果
-   */
-  checkSelectedZodiacsResult: (issue, result) => {
-    console.log('精选生肖历史功能已移除');
-  },
 
   /**
    * 后台静默保存特码热门TOP5

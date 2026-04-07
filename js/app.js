@@ -750,15 +750,7 @@ if (!Business.confirmPredictionFilters) {
   };
 }
 
-if (!Business.toggleZodiacPredictionHistory) {
-  Business.toggleZodiacPredictionHistory = () => {
-    try {
-      console.log('切换预测历史展开/折叠');
-    } catch(e) {
-      console.error('切换预测历史展开/折叠失败:', e);
-    }
-  };
-}
+
 
 if (!Business.checkAndUpdatePredictionStatus) {
   Business.checkAndUpdatePredictionStatus = () => {
