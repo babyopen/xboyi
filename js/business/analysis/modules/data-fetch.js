@@ -192,7 +192,7 @@ export const dataFetch = {
     const uniqueMap = new Map();
     filteredData.forEach(item => {
       const expectNum = Number(item?.expect || 0);
-      if(expectNum && !isNaN(expectNum)) {
+      if (expectNum && !isNaN(expectNum)) {
         uniqueMap.set(expectNum, item);
       }
     });
@@ -226,7 +226,8 @@ export const dataFetch = {
       // 更新状态
       const newAnalysis = { 
         ...StateManager._state.analysis, 
-        historyData: sortedData 
+        historyData: sortedData,
+        lastUpdateTime: Date.now()
       };
       StateManager.setState({ analysis: newAnalysis }, false);
 
@@ -251,22 +252,34 @@ export const dataFetch = {
         prediction.updateSpecialHistoryComparison();
         // 重新渲染精选特码历史以显示最新比较结果
         prediction.renderSpecialHistory();
-        
-        // 检查最新开奖结果并自动核对精选生肖
-        if (sortedData.length > 0) {
-          const latestItem = sortedData[0];
-          const issue = latestItem.expect;
-          const s = analysis.getSpecial(latestItem);
-          const resultZodiac = s.zod;
-          
-          // 核对精选生肖结果
-          prediction.checkSelectedZodiacsResult(issue, resultZodiac);
-        }
       });
       
       if(!silent) Toast.show('数据加载成功');
     } else if (!silent) {
       Toast.show('数据已是最新');
+    }
+    
+    // 无论数据是否有变化，都检查历史数据中的最新记录并进行核对
+    // 优先在历史开奖记录中查找核对，如果有数据就不用触发最新开奖结果接口
+    dataFetch._checkAndUpdateRecords(sortedData);
+  },
+
+  /**
+   * 检查并更新记录
+   * @private
+   * @param {Array} sortedData - 处理后的数据
+   */
+  _checkAndUpdateRecords: (sortedData) => {
+    if (sortedData.length > 0) {
+      const latestItem = sortedData[0];
+      const issue = latestItem.expect;
+      const s = analysis.getSpecial(latestItem);
+      const resultZodiac = s.zod;
+      
+      // 自动核对生肖记录
+      import('../../record.js').then(({ record }) => {
+        record.checkZodiacRecord(issue, resultZodiac);
+      });
     }
   },
 
@@ -309,23 +322,24 @@ export const dataFetch = {
    */
   _loadHistoryFromStorage: () => {
     try {
-      const cacheData = Storage.get('historyDataCache', null);
-      const cacheTime = Storage.get('historyDataCacheTime', 0);
+      const cacheData = Storage.get(Storage.KEYS.HISTORY_CACHE, null);
+      const cacheTime = Storage.get(Storage.KEYS.HISTORY_CACHE_TIME, 0);
       const now = Date.now();
       
-      // 检查缓存是否存在且未过期（1小时）
+      // 检查缓存是否存在
       if (cacheData && Array.isArray(cacheData) && cacheData.length > 0) {
         // 最新开奖数据缓存时间较短（5分钟）
         const latestCacheTime = Storage.get('latestDataCacheTime', 0);
         const latestDataExpired = now - latestCacheTime > 5 * 60 * 1000;
         
-        // 历史数据缓存时间较长（1小时）
-        const historyDataExpired = now - cacheTime > 60 * 60 * 1000;
+        // 历史数据缓存时间较长（24小时）
+        const historyDataExpired = now - cacheTime > 24 * 60 * 60 * 1000;
         
         return {
           data: cacheData,
           latestExpired: latestDataExpired,
-          historyExpired: historyDataExpired
+          historyExpired: historyDataExpired,
+          lastUpdate: cacheTime
         };
       }
       return null;
@@ -342,9 +356,8 @@ export const dataFetch = {
    */
   _saveHistoryToStorage: (data) => {
     try {
-      Storage.set('historyDataCache', data);
-      Storage.set('historyDataCacheTime', Date.now());
-      Storage.set('latestDataCacheTime', Date.now());
+      Storage.set(Storage.KEYS.HISTORY_CACHE, data);
+      Storage.set(Storage.KEYS.HISTORY_CACHE_TIME, Date.now());
       dataFetch._log('info', '历史数据已保存到本地存储');
     } catch (e) {
       dataFetch._log('error', '保存历史数据到本地存储失败:', e);
@@ -365,44 +378,50 @@ export const dataFetch = {
         dataFetch._handleDataUpdate(cachedData.data, true);
       }
       
-      // 即使有缓存，也尝试刷新数据
-      let latestData = [];
-      let historyData = [];
-      let hasError = false;
-      
-      // 尝试获取最新开奖记录（失败不影响历史数据获取）
-      try {
-        latestData = await dataFetch._fetchLatestData();
-        dataFetch._log('info', '获取最新开奖记录成功');
-      } catch (latestError) {
-        dataFetch._log('warn', '获取最新开奖记录失败，将尝试获取历史数据:', latestError);
-        hasError = true;
-      }
-      
-      // 尝试获取历史数据
-      try {
-        const year = new Date().getFullYear();
-        historyData = await dataFetch._fetchHistoryData(year);
-        dataFetch._log('info', '获取历史数据成功');
-      } catch (historyError) {
-        dataFetch._log('warn', '获取历史数据失败:', historyError);
-        hasError = true;
-      }
-      
-      // 合并数据，最新开奖记录优先
-      const combinedData = [...latestData, ...historyData];
-      
-      if (combinedData.length > 0) {
-        const sortedData = dataFetch._processHistoryData(combinedData);
-        // 处理数据更新
-        dataFetch._handleDataUpdate(sortedData, true);
-        // 保存到本地存储
-        dataFetch._saveHistoryToStorage(sortedData);
-        dataFetch._log('info', '静默刷新历史数据成功');
+      // 检查是否在开奖时间窗口内
+      if (dataFetch._isInDrawTimeWindow()) {
+        dataFetch._log('info', '在开奖时间窗口内，尝试获取最新数据');
+        
+        let latestData = [];
+        let historyData = [];
+        let hasError = false;
+        
+        // 尝试获取最新开奖记录（失败不影响历史数据获取）
+        try {
+          latestData = await dataFetch._fetchLatestData();
+          dataFetch._log('info', '获取最新开奖记录成功');
+        } catch (latestError) {
+          dataFetch._log('warn', '获取最新开奖记录失败，将尝试获取历史数据:', latestError);
+          hasError = true;
+        }
+        
+        // 尝试获取历史数据
+        try {
+          const year = new Date().getFullYear();
+          historyData = await dataFetch._fetchHistoryData(year);
+          dataFetch._log('info', '获取历史数据成功');
+        } catch (historyError) {
+          dataFetch._log('warn', '获取历史数据失败:', historyError);
+          hasError = true;
+        }
+        
+        // 合并数据，最新开奖记录优先
+        const combinedData = [...latestData, ...historyData];
+        
+        if (combinedData.length > 0) {
+          const sortedData = dataFetch._processHistoryData(combinedData);
+          // 处理数据更新
+          dataFetch._handleDataUpdate(sortedData, true);
+          // 保存到本地存储
+          dataFetch._saveHistoryToStorage(sortedData);
+          dataFetch._log('info', '静默刷新历史数据成功');
+        } else {
+          // 没有任何数据，使用模拟数据
+          dataFetch._log('warn', '没有获取到任何数据，使用模拟数据');
+          dataFetch._tryUseMockData(true);
+        }
       } else {
-        // 没有任何数据，使用模拟数据
-        dataFetch._log('warn', '没有获取到任何数据，使用模拟数据');
-        dataFetch._tryUseMockData(true);
+        dataFetch._log('info', '不在开奖时间窗口内，使用本地存储数据');
       }
     } catch(e) {
       dataFetch._log('warn', '静默刷新失败（API可能不可用）:', e);
@@ -433,6 +452,7 @@ export const dataFetch = {
           historyList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--sub-text);">加载中，显示缓存数据...</div>';
         }
         
+        // 手动刷新时，无论是否在开奖时间窗口内，都尝试获取最新数据
         let latestData = [];
         let historyData = [];
         let hasError = false;
@@ -546,8 +566,8 @@ export const dataFetch = {
     const hours = now.getHours();
     const minutes = now.getMinutes();
     
-    // 开奖时间为21:33，时间窗口为21:30-21:40
-    return hours === 21 && minutes >= 30 && minutes <= 40;
+    // 开奖时间窗口为21:32-21:35
+    return hours === 21 && minutes >= 32 && minutes <= 35;
   },
 
   /**

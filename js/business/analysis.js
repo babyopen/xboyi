@@ -202,6 +202,7 @@ export const analysis = {
       const state = StateManager._state;
       const historyData = state?.analysis?.historyData || [];
       const showCount = state?.analysis?.showCount || 20;
+      const lastUpdateTime = state?.analysis?.lastUpdateTime || 0;
       const list = historyData.slice(0, showCount);
       const historyList = document.getElementById('historyList');
       
@@ -211,7 +212,7 @@ export const analysis = {
       }
       
       if(historyList) {
-        historyList.innerHTML = list.map(item => {
+        let historyHTML = list.map(item => {
           try {
             const codeArr = (item.openCode || '0,0,0,0,0,0,0').split(',');
             const s = analysis.getSpecial(item);
@@ -236,6 +237,22 @@ export const analysis = {
             </div>`;
           }
         }).join('');
+        
+        // 添加最后更新时间
+        if (lastUpdateTime) {
+          const updateTime = new Date(lastUpdateTime);
+          const formattedTime = updateTime.toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+          historyHTML += `<div style="padding:10px;text-align:center;font-size:12px;color:var(--sub-text);">最后更新时间: ${formattedTime}</div>`;
+        }
+        
+        historyList.innerHTML = historyHTML;
       }
     } catch(e) {
       console.error('渲染历史记录失败:', e);

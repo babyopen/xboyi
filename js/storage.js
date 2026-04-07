@@ -20,7 +20,8 @@ export const Storage = {
     SAVED_FILTERS: 'savedFilters',
     DATA_VERSION: 'dataVersion',
     HISTORY_CACHE: 'historyCache',
-    HISTORY_CACHE_TIME: 'historyCacheTime'
+    HISTORY_CACHE_TIME: 'historyCacheTime',
+    ZODIAC_RECORDS: 'zodiacRecords'
   }),
 
   /**
@@ -243,5 +244,119 @@ export const Storage = {
     Storage.remove(Storage.KEYS.HISTORY_CACHE_TIME);
   },
 
+  /**
+   * 保存生肖记录
+   * @param {Object} recordData - 生肖记录对象
+   * @returns {boolean} 是否成功
+   */
+  saveZodiacRecord: (recordData) => {
+    try {
+      if (!recordData || !recordData.issue || !recordData.zodiacs) {
+        console.error('保存生肖记录失败：数据不完整');
+        return false;
+      }
 
-};
+      const records = Storage.get(Storage.KEYS.ZODIAC_RECORDS, []);
+      const existingIndex = records.findIndex(r => r.issue === recordData.issue);
+      
+      if (existingIndex >= 0) {
+        // 更新现有记录
+        records[existingIndex] = {
+          ...records[existingIndex],
+          ...recordData,
+          updatedAt: Date.now()
+        };
+      } else {
+        // 添加新记录
+        records.unshift({
+          ...recordData,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          checked: false,
+          matched: null
+        });
+      }
+      
+      // 只保留最近50条记录
+      if (records.length > 50) {
+        records.splice(50);
+      }
+      
+      return Storage.set(Storage.KEYS.ZODIAC_RECORDS, records);
+    } catch (e) {
+      console.error('保存生肖记录失败:', e);
+      return false;
+    }
+  },
+
+  /**
+   * 加载生肖记录
+   * @returns {Array} 生肖记录列表
+   */
+  loadZodiacRecords: () => {
+    try {
+      const records = Storage.get(Storage.KEYS.ZODIAC_RECORDS, []);
+      return Array.isArray(records) ? records : [];
+    } catch (e) {
+      console.error('加载生肖记录失败:', e);
+      return [];
+    }
+  },
+
+  /**
+   * 核对生肖记录
+   * @param {string} issue - 期号
+   * @param {string} actualZodiac - 实际开奖生肖
+   * @returns {Object} 核对结果
+   */
+  checkZodiacRecord: (issue, actualZodiac) => {
+    try {
+      if (!issue || !actualZodiac) {
+        return { success: false, message: '参数不完整' };
+      }
+
+      const records = Storage.get(Storage.KEYS.ZODIAC_RECORDS, []);
+      const recordIndex = records.findIndex(r => r.issue === issue);
+      
+      if (recordIndex >= 0) {
+        const record = records[recordIndex];
+        if (!record.zodiacs || !Array.isArray(record.zodiacs)) {
+          return { success: false, message: '记录数据格式错误' };
+        }
+        
+        const matched = record.zodiacs.includes(actualZodiac);
+        
+        // 更新记录
+        records[recordIndex] = {
+          ...record,
+          checked: true,
+          matched: matched,
+          actualZodiac: actualZodiac,
+          checkedAt: Date.now()
+        };
+        
+        Storage.set(Storage.KEYS.ZODIAC_RECORDS, records);
+        return { success: true, matched: matched, record: records[recordIndex] };
+      }
+      
+      return { success: false, message: '未找到对应期号的记录' };
+    } catch (e) {
+      console.error('核对生肖记录失败:', e);
+      return { success: false, message: '核对失败' };
+    }
+  },
+
+  /**
+   * 清除所有生肖记录
+   * @returns {boolean} 是否成功
+   */
+  clearZodiacRecords: () => {
+    try {
+      return Storage.remove(Storage.KEYS.ZODIAC_RECORDS);
+    } catch (e) {
+      console.error('清除生肖记录失败:', e);
+      return false;
+    }
+  }
+
+}; 

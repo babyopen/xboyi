@@ -9,6 +9,7 @@ import { DataQuery } from '../data-query.js';
 import { Storage } from '../storage.js';
 import { Toast } from '../toast.js';
 import { analysisCalc } from './analysis/modules/analysis-calc.js';
+import { IssueManager } from './issue-manager.js';
 
 export const prediction = {
   _MLServiceState: 'idle',
@@ -596,6 +597,75 @@ export const prediction = {
       console.log('后台静默保存特码热门TOP5');
     } catch(e) {
       console.error('后台静默保存特码热门TOP5失败:', e);
+    }
+  },
+
+  /**
+   * 保存精选生肖到记录页面
+   */
+  saveSelectedZodiacsToRecord: () => {
+    try {
+      const selectedZodiacsMap = prediction.getSelectedZodiacs();
+      
+      if (!selectedZodiacsMap || selectedZodiacsMap.size === 0) {
+        console.log('没有选中的生肖');
+        return;
+      }
+      
+      // 获取当前期号
+      let issue = '';
+      try {
+        const nextIssue = IssueManager.getNextIssue();
+        
+        if (nextIssue && nextIssue.full) {
+          issue = nextIssue.full;
+        } else {
+          // 从DOM中获取期号
+          const conclusionTitle = document.querySelector('.conclusion-title span');
+          if (conclusionTitle) {
+            const titleText = conclusionTitle.textContent || conclusionTitle.innerText;
+            const issueMatch = titleText.match(/第(\d+)期/);
+            if (issueMatch && issueMatch[1]) {
+              issue = issueMatch[1];
+            }
+          }
+        }
+      } catch (issueError) {
+        console.error('获取期号失败:', issueError);
+      }
+      
+      if (!issue) {
+        console.error('获取期号失败');
+        return;
+      }
+      
+      // 保存到记录页面
+      import('./record.js').then(({ record }) => {
+        try {
+          const zodiacs = Array.from(selectedZodiacsMap.keys());
+          if (!zodiacs || zodiacs.length === 0) {
+            console.error('生肖数据为空');
+            return;
+          }
+          
+          const success = record.saveZodiacRecord({
+            issue: issue,
+            zodiacs: zodiacs
+          });
+          
+          if (success) {
+            console.log('保存精选生肖到记录页面成功');
+          } else {
+            console.error('保存精选生肖到记录页面失败');
+          }
+        } catch (saveError) {
+          console.error('保存精选生肖到记录页面失败:', saveError);
+        }
+      }).catch(importError => {
+        console.error('导入record模块失败:', importError);
+      });
+    } catch(e) {
+      console.error('保存精选生肖到记录页面失败:', e);
     }
   }
 };

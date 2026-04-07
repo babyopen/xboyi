@@ -1,6 +1,16 @@
+/**
+ * 期号管理模块
+ * @namespace IssueManager
+ * @description 负责期号的解析、验证、生成和更新
+ */
 import { StateManager } from '../state-manager.js';
 
 export const IssueManager = {
+  /**
+   * 解析期号
+   * @param {string|number} expect - 期号字符串或数字
+   * @returns {Object|null} 解析后的期号对象，包含年份、期数和完整期号
+   */
   parseIssueNumber(expect) {
     if (!expect) return null;
     
@@ -22,11 +32,21 @@ export const IssueManager = {
     return null;
   },
 
+  /**
+   * 验证期号格式
+   * @param {string} issueStr - 期号字符串
+   * @returns {boolean} 期号格式是否有效
+   */
   validateIssueFormat(issueStr) {
     if (!issueStr || issueStr.length < 7) return false;
     return /^\d{7}$/.test(issueStr.substring(0, 7));
   },
 
+  /**
+   * 获取下一期号
+   * @param {string|number} currentExpect - 当前期号
+   * @returns {Object|null} 下一期号对象
+   */
   getNextIssueNumber(currentExpect) {
     if (!currentExpect) return null;
     
@@ -56,6 +76,10 @@ export const IssueManager = {
     };
   },
 
+  /**
+   * 获取最新期号
+   * @returns {Object|null} 最新期号对象
+   */
   getLatestIssue() {
     try {
       const state = StateManager._state;
@@ -75,6 +99,10 @@ export const IssueManager = {
     }
   },
 
+  /**
+   * 获取下一期号
+   * @returns {Object|null} 下一期号对象
+   */
   getNextIssue() {
     try {
       const state = StateManager._state;
@@ -94,6 +122,9 @@ export const IssueManager = {
     }
   },
 
+  /**
+   * 更新预测标题
+   */
   updatePredictionTitles() {
     try {
       const nextIssue = this.getNextIssue();

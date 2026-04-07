@@ -306,131 +306,19 @@
 
   <!-- 记录页面 -->
   <div class="page" id="recordPage" style="display:none">
-    <!-- 最新开奖信息卡片 -->
-    <div class="card" id="latestDrawCard">
-      <div class="card-header">
-        <h2>最新开奖信息</h2>
-        <button class="btn-mini" data-action="refreshLatest">刷新</button>
+    <!-- 记录页面内容 -->
+    <div class="record-container">
+      <div class="record-header">
+        <h2>精选生肖记录</h2>
+        <button class="btn-mini" data-action="clearZodiacRecords">清空记录</button>
       </div>
-      <div class="card-body">
-        <div class="latest-draw-info" style="text-align:center;padding:16px 0;">
-          <div style="font-size:16px;font-weight:600;margin-bottom:8px;">第 <span id="latestPeriod">--</span> 期</div>
-          <div style="font-size:14px;color:var(--sub-text);margin-bottom:16px;">开奖时间：<span id="latestTime">--</span></div>
-          <div id="latestNumbers" style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;"></div>
-        </div>
+      
+      <div class="record-list" id="zodiacRecordList">
+        <!-- 记录项将通过JavaScript动态生成 -->
+        <div class="empty-tip">暂无记录</div>
       </div>
     </div>
-
-    <!-- 历史记录卡片 -->
-    <div class="card" id="historyRecordCard">
-      <div class="card-header">
-        <h2>历史记录</h2>
-        <div style="display:flex;gap:4px;align-items:center;">
-          <button class="btn-mini" data-action="toggleHistoryFilter">筛选</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div id="historyFilterPanel" class="filter-panel" style="display:none;">
-          <div class="filter-panel-row">
-            <div class="filter-btn-group">
-              <button class="btn-mini history-period-btn active" data-period="10">10期</button>
-              <button class="btn-mini history-period-btn" data-period="20">20期</button>
-              <button class="btn-mini history-period-btn" data-period="30">30期</button>
-              <button class="btn-mini history-period-btn" data-period="all">全年</button>
-            </div>
-            <div class="filter-panel-buttons">
-              <button class="btn-mini" data-action="resetHistoryFilter">重置</button>
-              <button class="btn-mini" data-action="confirmHistoryFilter" style="background:var(--primary);color:#fff;">确认</button>
-            </div>
-          </div>
-        </div>
-        <div id="historyTableContainer">
-          <div id="historyTableBody" style="min-height:200px;">
-            <div class="empty-tip">加载中...</div>
-          </div>
-        </div>
-        <div id="historyPagination" class="pagination" style="margin-top:12px;"></div>
-      </div>
-    </div>
-
-    <!-- 特码历史卡片 -->
-    <div class="card" id="specialRecordCard">
-      <div class="card-header">
-        <h2>特码历史</h2>
-        <div style="display:flex;gap:4px;align-items:center;">
-          <button class="btn-mini" data-action="toggleSpecialFilter">筛选</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div id="specialFilterPanel" class="filter-panel" style="display:none;">
-          <div class="filter-panel-row">
-            <div class="filter-btn-group">
-              <button class="btn-mini special-period-btn active" data-period="10">10期</button>
-              <button class="btn-mini special-period-btn" data-period="20">20期</button>
-              <button class="btn-mini special-period-btn" data-period="30">30期</button>
-              <button class="btn-mini special-period-btn" data-period="all">全年</button>
-            </div>
-            <div class="filter-panel-buttons">
-              <button class="btn-mini" data-action="resetSpecialFilter">重置</button>
-              <button class="btn-mini" data-action="confirmSpecialFilter" style="background:var(--primary);color:#fff;">确认</button>
-            </div>
-          </div>
-        </div>
-        <div id="specialTableContainer">
-          <div id="specialTableBody" style="min-height:150px;">
-            <div class="empty-tip">加载中...</div>
-          </div>
-        </div>
-        <div id="specialPagination" class="pagination" style="margin-top:12px;"></div>
-      </div>
-    </div>
-
-    <!-- 特码热门TOP5历史卡片 -->
-    <div class="card" id="hotRecordCard">
-      <div class="card-header">
-        <h2>特码热门TOP5历史</h2>
-        <button class="btn-mini" data-action="refreshHotHistory">刷新</button>
-      </div>
-      <div class="card-body">
-        <div id="hotTableContainer">
-          <div id="hotTableBody" style="min-height:150px;">
-            <div class="empty-tip">加载中...</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 预测历史卡片 -->
-    <div class="card" id="predictionRecordCard">
-      <div class="card-header">
-        <h2>预测历史</h2>
-        <div style="display:flex;gap:4px;align-items:center;">
-          <button class="btn-mini" data-action="togglePredictionFilter">筛选</button>
-      </div>
-      </div>
-      <div class="card-body">
-        <div id="predictionFilterPanel" class="filter-panel" style="display:none;">
-          <div class="filter-panel-row">
-            <div class="filter-btn-group">
-              <button class="btn-mini prediction-period-btn active" data-period="7">7天</button>
-              <button class="btn-mini prediction-period-btn" data-period="30">30天</button>
-              <button class="btn-mini prediction-period-btn" data-period="all">全年</button>
-            </div>
-            <div class="filter-panel-buttons">
-              <button class="btn-mini" data-action="resetPredictionFilter">重置</button>
-              <button class="btn-mini" data-action="confirmPredictionFilter" style="background:var(--primary);color:#fff;">确认</button>
-            </div>
-          </div>
-        </div>
-        <div id="predictionTableContainer">
-          <div id="predictionTableBody" style="min-height:150px;">
-            <div class="empty-tip">加载中...</div>
-          </div>
-        </div>
-        <div id="predictionPagination" class="pagination" style="margin-top:12px;"></div>
-      </div>
-    </div>
-
+    
     <!-- 免责声明 -->
     <div class="disclaimer">仅供娱乐，非投注建议</div>
   </div>

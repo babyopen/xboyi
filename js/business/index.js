@@ -11,5 +11,5 @@ export const Business = {
   ...analysis,
   ...prediction,
   ...profile,
-  ...record,
+  record,
 };

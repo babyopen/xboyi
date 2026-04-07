@@ -365,11 +365,12 @@ export const analysisRender = {
               `;
             });
             selectedZodiacsGrid.innerHTML = selectedHtml;
+            
+            // 保存精选生肖到记录页面
+            prediction.saveSelectedZodiacsToRecord();
           } else {
             selectedZodiacsGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--sub-text);">暂无精选生肖数据</div>';
           }
-          
-          // 精选生肖分析功能已移除
         });
       }
 

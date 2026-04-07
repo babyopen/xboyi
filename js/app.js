@@ -99,6 +99,10 @@ async function initApp() {
     try {
       Business.initAnalysisPage();
     } catch(e) { console.warn('initAnalysisPage 执行失败:', e); }
+    // 14.3 初始化记录页面
+    try {
+      Business.record.init();
+    } catch(e) { console.warn('record.init 执行失败:', e); }
     // 14.2 设置底部导航栏初始样式（筛选页面需要给快捷导航让位置）
     const bottomNav = document.querySelector('.bottom-nav');
     if(bottomNav) {
@@ -212,8 +216,8 @@ if (!Business.switchBottomNav) {
       }
 
       // 初始化对应页面的功能
-      if (pageId === 'recordPage' && Business.initRecordPage) {
-        Business.initRecordPage();
+      if (pageId === 'recordPage' && Business.record && Business.record.init) {
+        Business.record.init();
       }
 
     } catch(e) {

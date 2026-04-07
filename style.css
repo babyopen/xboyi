@@ -1998,6 +1998,166 @@ input[type="checkbox"]{
   padding: var(--spacing-sm) var(--spacing-md);
 }
 
+/* 记录页面样式 */
+.record-container {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.record-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text);
+}
+
+.record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.record-item {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 16px;
+  position: relative;
+}
+
+.record-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.record-item-issue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.record-item-time {
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.record-item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.record-item-zodiacs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.record-item-zodiac {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  font-size: 12px;
+  background: #f8f9fa;
+  transition: all 0.3s;
+}
+
+.record-item-zodiac.matched {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.record-item-result {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.record-item-actual {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.record-item-actual.hit {
+  background: var(--primary);
+  color: #fff;
+}
+
+.record-item-actual.miss {
+  background: var(--danger);
+  color: #fff;
+}
+
+.record-item-status {
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.record-item-checked {
+  font-size: 11px;
+  color: var(--sub-text);
+  margin-top: 8px;
+  text-align: right;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .record-container {
+    padding: 12px;
+  }
+  
+  .record-item {
+    padding: 12px;
+  }
+  
+  .record-item-zodiac {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+  
+  .record-item-actual {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .record-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .record-item-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .record-item-result {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
 .history-label {
   font-size: var(--font-size-sm);
   color: var(--sub-text);
