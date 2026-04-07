@@ -195,46 +195,12 @@ export const EventBinder = {
       if(action === 'copyZodiacNumbers') Business.copyZodiacNumbers();
       if(action === 'favoriteZodiacNumbers') Business.favoriteZodiacNumbers();
       if(action === 'refreshHotCold') Business.refreshHotCold();
-      // 全选预测历史期数
-      if(action === 'selectAllPredictionPeriods') Business.selectAllPredictionPeriods();
-      // 重置预测历史期数
-      if(action === 'resetPredictionPeriods') Business.resetPredictionPeriods();
-      // 切换预测历史筛选面板展开/折叠
-      if(action === 'togglePredictionFiltersPanel') Business.togglePredictionFiltersPanel();
-      // 确认预测历史筛选条件
-      if(action === 'confirmPredictionFilters') Business.confirmPredictionFilters();
-      // 切换预测历史展开/折叠
-      if(action === 'toggleZodiacPredictionHistory') Business.toggleZodiacPredictionHistory();
-      // 预测统计操作
-      if(action === 'refreshPredictionStatistics') {
-        Business.checkAndUpdatePredictionStatus();
-        Business.updateSelectedZodiacHistoryComparison();
-        Business.renderPredictionStatistics();
-        Business.renderSelectedZodiacHistory();
-      }
-      // ML预测历史操作
-      if(action === 'toggleMLPredictionHistory') Business.toggleMLPredictionHistory();
-      if(action === 'refreshMLPredictionHistory') {
-        Business.checkAndUpdatePredictionStatus();
-        Business.renderMLPredictionHistory();
-      }
-      // 精选特码历史操作
-      if(action === 'toggleSpecialHistory') Business.toggleSpecialHistory();
-      if(action === 'toggleSpecialFiltersPanel') Business.toggleSpecialFiltersPanel();
-      if(action === 'confirmSpecialFilters') Business.confirmSpecialFilters();
-      // 切换精选特码历史模式筛选
-      if(action === 'switchSpecialHistoryMode') Business.switchSpecialHistoryMode(actionBtn.dataset.mode);
       // 显示连出详情
       if(action === 'showStreakDetail') Business.showStreakDetail(actionBtn.dataset.streakType);
       // 显示统计详情
       if(action === 'showStatDetail') Business.showStatDetail(actionBtn.dataset.statType);
       // 切换精选特码模式
       if(action === 'switchSpecialMode') Business.switchSpecialMode(actionBtn.dataset.mode);
-      // 精选生肖历史操作
-      if(action === 'toggleSelectedZodiacHistory') Business.toggleSelectedZodiacHistory();
-      // 特码热门top5历史操作
-      if(action === 'toggleHotNumbersHistory') Business.toggleHotNumbersHistory();
-      if(action === 'switchHotNumbersHistoryPage') Business.switchHotNumbersHistoryPage(Number(actionBtn.dataset.page));
       return;
     }
 
@@ -375,32 +341,7 @@ export const EventBinder = {
       return;
     }
 
-    // 11. 预测历史期数按钮
-    const predictionPeriodBtn = target.closest('.prediction-period-btn[data-period]');
-    if(predictionPeriodBtn){
-      Business.toggleButtonState(predictionPeriodBtn);
-      Business.savePredictionHistoryFilter();
-      Business.renderZodiacPredictionHistory();
-      return;
-    }
 
-    // 13. 精选特码历史期数按钮
-    const specialPeriodBtn = target.closest('.special-period-btn[data-period]');
-    if(specialPeriodBtn){
-      Business.toggleRadioButtonGroup(specialPeriodBtn, '.special-period-btn');
-      Business.saveSpecialHistoryFilter();
-      Business.renderSpecialHistory();
-      return;
-    }
-
-    // 14. 精选特码历史号码数量按钮
-    const specialNumBtn = target.closest('.special-num-btn[data-num]');
-    if(specialNumBtn){
-      Business.toggleRadioButtonGroup(specialNumBtn, '.special-num-btn');
-      Business.saveSpecialHistoryFilter();
-      Business.renderSpecialHistory();
-      return;
-    }
   },
 
   /**
@@ -514,13 +455,6 @@ if (!Business.switchBottomNav) {
       btn.classList.toggle('active', i === index);
     });
     
-    // 如果切换到记录页面，完整渲染所有记录
-    if (index === 2) {
-      try {
-        Business.renderAllRecords();
-      } catch (e) {
-        console.error('渲染记录页面失败:', e);
-      }
-    }
+
   };
 }

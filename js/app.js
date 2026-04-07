@@ -78,64 +78,7 @@ async function initApp() {
       } catch(e) { console.warn('刷新历史数据失败:', e); }
     }, 1000);
     
-    // 10. 加载预测历史勾选状态并渲染
-    try {
-      Business.loadPredictionHistoryFilter();
-    } catch(e) { console.warn('loadPredictionHistoryFilter 执行失败:', e); }
-    try {
-      Business.renderZodiacPredictionHistory();
-    } catch(e) { console.warn('renderZodiacPredictionHistory 执行失败:', e); }
-    
-    // 11. 加载精选特码历史并渲染
-    const specialHistory = Storage.loadSpecialHistory();
-    StateManager.setState({ specialHistory: specialHistory }, false);
-    // 先加载用户之前保存的筛选状态
-    try {
-      Business.loadSpecialHistoryFilter();
-    } catch(e) { console.warn('loadSpecialHistoryFilter 执行失败:', e); }
-    
-    // 根据自动模式的初始状态，设置精选特码历史的默认显示模式
-    const state = StateManager._state;
-    const currentSystemMode = state.analysis.specialMode || 'auto';
-    let defaultHistoryMode = state.specialHistoryModeFilter || 'all';
-    
-    // 如果当前是"全部"模式，根据系统模式自动调整
-    if(defaultHistoryMode === 'all') {
-      if(currentSystemMode === 'hot') {
-        defaultHistoryMode = 'hot';
-      } else if(currentSystemMode === 'cold') {
-        defaultHistoryMode = 'cold';
-      } else if(currentSystemMode === 'auto') {
-        // 自动模式：根据当前分析结果决定显示什么模式
-        try {
-          const data = Business.calcZodiacAnalysis(10);
-          if(data) {
-            defaultHistoryMode = Business.decideAutoMode(data);
-          } else {
-            defaultHistoryMode = 'hot';
-          }
-        } catch(e) {
-          console.warn('计算生肖分析失败:', e);
-          defaultHistoryMode = 'hot';
-        }
-      }
-    }
-    
-    // 更新精选特码历史的显示模式
-    StateManager.setState({ specialHistoryModeFilter: defaultHistoryMode }, false);
-    
-    // 更新精选特码历史按钮样式
-    document.querySelectorAll('.special-history-mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === defaultHistoryMode);
-    });
-    
-    // 11.5. 加载精选生肖历史
-    const selectedZodiacHistory = Storage.loadSelectedZodiacHistory();
-    StateManager.setState({ selectedZodiacHistory: selectedZodiacHistory }, false);
-    
-    // 11.6. 加载特码热门top5历史
-    const hotNumbersHistory = Storage.loadHotNumbersHistory();
-    StateManager.setState({ hotNumbersHistory: hotNumbersHistory }, false);
+
 
     // 12. 初始化滑动处理器
     Utils.initSwipeHandlers();
@@ -148,7 +91,11 @@ async function initApp() {
     try {
       Business.checkDrawTimeLoop();
     } catch(e) { console.warn('checkDrawTimeLoop 执行失败:', e); }
-    // 14.1 初始化分析页面
+    // 14.1 启动定时获取开奖数据服务
+    try {
+      Business.startScheduledDataFetch();
+    } catch(e) { console.warn('startScheduledDataFetch 执行失败:', e); }
+    // 14.2 初始化分析页面
     try {
       Business.initAnalysisPage();
     } catch(e) { console.warn('initAnalysisPage 执行失败:', e); }
@@ -158,32 +105,7 @@ async function initApp() {
       bottomNav.classList.add('needs-space');
     }
     
-    // 15. 确保记录页面DOM可用，强制渲染一次（即使页面隐藏）
-    // 使用单次渲染替代多次重复渲染
-    try {
-      const recordPage = document.getElementById('recordPage');
-      if(recordPage) {
-        // 临时显示记录页面以确保渲染成功
-        const originalDisplay = recordPage.style.display;
-        recordPage.style.display = 'block';
-        
-        // 统一渲染精选特码历史和精选生肖历史（仅一次）
-        try {
-          Business.renderSpecialHistory();
-        } catch(e) { console.warn('renderSpecialHistory 执行失败:', e); }
-        try {
-          Business.renderSelectedZodiacHistory();
-        } catch(e) { console.warn('renderSelectedZodiacHistory 执行失败:', e); }
-        try {
-          Business.renderHotNumbersHistory();
-        } catch(e) { console.warn('renderHotNumbersHistory 执行失败:', e); }
-        
-        // 恢复原显示状态
-        recordPage.style.display = originalDisplay;
-      }
-    } catch(e) {
-      console.error('预渲染记录页面失败', e);
-    }
+
     
     // 16. 隐藏加载遮罩
     Render.hideLoading();
@@ -200,53 +122,7 @@ async function initApp() {
       }
     });
     
-    // 延迟静默更新预测历史并保存精选特码和精选生肖
-    setTimeout(() => {
-      try {
-        Business.silentUpdateAllPredictionHistory();
-      } catch(e) { console.warn('silentUpdateAllPredictionHistory 执行失败:', e); }
-      // 同时更新精选特码历史和精选生肖历史的开奖记录比较
-      try {
-        Business.updateSpecialHistoryComparison();
-      } catch(e) { console.warn('updateSpecialHistoryComparison 执行失败:', e); }
-      try {
-        Business.updateSelectedZodiacHistoryComparison();
-      } catch(e) { console.warn('updateSelectedZodiacHistoryComparison 执行失败:', e); }
-      try {
-        Business.updateHotNumbersHistoryComparison();
-      } catch(e) { console.warn('updateHotNumbersHistoryComparison 执行失败:', e); }
-      // 统一重新渲染以显示最新比较结果（仅一次）
-      try {
-        Business.renderSpecialHistory();
-      } catch(e) { console.warn('renderSpecialHistory 执行失败:', e); }
-      try {
-        Business.renderSelectedZodiacHistory();
-      } catch(e) { console.warn('renderSelectedZodiacHistory 执行失败:', e); }
-      try {
-        Business.renderHotNumbersHistory();
-      } catch(e) { console.warn('renderHotNumbersHistory 执行失败:', e); }
-      
-      // 后台静默生成并保存所有精选特码组合
-      try {
-        Business.silentSaveAllSpecialCombinations();
-      } catch(e) {
-        console.error('后台静默保存精选特码失败', e);
-      }
-      
-      // 后台静默生成并保存所有精选生肖组合
-      try {
-        Business.silentSaveAllSelectedZodiacs();
-      } catch(e) {
-        console.error('后台静默保存精选生肖失败', e);
-      }
-      
-      // 后台静默生成并保存特码热门top5
-      try {
-        Business.silentSaveHotNumbers();
-      } catch(e) {
-        console.error('后台静默保存特码热门top5失败', e);
-      }
-    }, 3000);
+
     
     // 初始化ML服务状态检测（可选的，不影响主功能）
     try {
@@ -335,14 +211,11 @@ if (!Business.switchBottomNav) {
         activeBtn.classList.add('active');
       }
 
-      // 如果切换到记录页面，完整渲染所有记录
-      if (pageId === 'recordPage') {
-        try {
-          Business.renderAllRecords();
-        } catch (e) {
-          console.error('渲染记录页面失败:', e);
-        }
+      // 初始化对应页面的功能
+      if (pageId === 'recordPage' && Business.initRecordPage) {
+        Business.initRecordPage();
       }
+
     } catch(e) {
       console.error('切换底部导航失败:', e);
     }

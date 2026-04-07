@@ -373,6 +373,9 @@ export const analysisRender = {
           } else {
             selectedZodiacsGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--sub-text);">暂无精选生肖数据</div>';
           }
+          
+          // 渲染精选生肖分析结果
+          analysisRender.renderSelectedZodiacsAnalysis();
         });
       }
 
@@ -876,5 +879,12 @@ export const analysisRender = {
     const coldCount = data.miss.cold;
 
     hotColdStatus.innerText = `热:${hotCount} 温:${warmCount} 冷:${coldCount}`;
+  },
+
+  /**
+   * 渲染精选生肖分析结果 - 已移除
+   */
+  renderSelectedZodiacsAnalysis: () => {
+    console.log('精选生肖分析功能已移除');
   }
 };

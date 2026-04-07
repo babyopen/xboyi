@@ -489,85 +489,13 @@ export const prediction = {
     // 这里需要完整的实现...
   },
 
-  // 生肖预测历史相关
+  // 生肖预测历史相关 - 已移除
   saveZodiacPredictionHistory: (sortedZodiacs, zodiacDetails) => {
-    try {
-      const history = Storage.loadZodiacPredictionHistory() || [];
-      
-      const newItem = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        sortedZodiacs: sortedZodiacs.map(z => ({
-          name: z[0], // 适配新的数据格式
-          count: 0, // 暂时设置为0，后续可以根据实际数据计算
-          miss: 0, // 暂时设置为0，后续可以根据实际数据计算
-          streak: 0, // 暂时设置为0，后续可以根据实际数据计算
-          level: 'medium' // 暂时设置为medium，后续可以根据实际数据计算
-        })),
-        zodiacDetails: zodiacDetails || {},
-        analyzeLimit: 30
-      };
-      
-      history.unshift(newItem);
-      
-      // 限制历史记录数量
-      if (history.length > 50) {
-        history.splice(50);
-      }
-      
-      Storage.saveZodiacPredictionHistory(history);
-      
-      // 更新状态
-      const state = StateManager._state;
-      StateManager.setState({ zodiacPredictionHistory: history }, false);
-      
-      console.log('预测历史已保存');
-    } catch(e) {
-      console.error('保存生肖预测历史失败:', e);
-      Toast.show('保存失败，请稍后重试');
-    }
+    console.log('生肖预测历史功能已移除');
   },
 
   renderZodiacPredictionHistory: () => {
-    const history = Storage.loadZodiacPredictionHistory() || [];
-    const historyList = document.getElementById('zodiacPredictionHistory');
-    if (!historyList) return;
-
-    if (history.length === 0) {
-      historyList.innerHTML = '<div style="text-align:center; padding:40px; color:var(--sub-text);">暂无预测历史</div>';
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-
-    history.forEach((item, index) => {
-      const itemDiv = document.createElement('div');
-      itemDiv.className = 'prediction-history-item';
-      itemDiv.setAttribute('role', 'listitem');
-
-      const topZodiacs = item.sortedZodiacs.slice(0, 3).map(z => `${z.name}(${z.count})`).join(', ');
-
-      itemDiv.innerHTML = `
-        <div class="prediction-history-header">
-          <div class="prediction-history-time">${new Date(item.timestamp).toLocaleString()}</div>
-          <div class="prediction-history-actions">
-            <button class="action-btn" onclick="Business.copyZodiacPredictionHistory(${index})"><i class="icon-copy"></i> 复制</button>
-            <button class="action-btn danger" onclick="Business.deleteZodiacPredictionHistoryItem(${index})"><i class="icon-delete"></i> 删除</button>
-          </div>
-        </div>
-        <div class="prediction-history-content">
-          <div class="prediction-history-top">
-            <span>前3热生肖: ${topZodiacs}</span>
-            <span>分析期数: ${item.analyzeLimit}</span>
-          </div>
-        </div>
-      `;
-
-      fragment.appendChild(itemDiv);
-    });
-
-    historyList.innerHTML = '';
-    historyList.appendChild(fragment);
+    console.log('生肖预测历史功能已移除');
   },
 
   toggleZodiacPredictionHistory: () => {
@@ -691,16 +619,19 @@ export const prediction = {
   },
 
   /**
-   * 后台静默保存精选生肖
+   * 后台静默保存精选生肖 - 已移除
    */
   silentSaveAllSelectedZodiacs: () => {
-    try {
-      // 这里可以添加保存精选生肖的逻辑
-      // 例如：将当前选中的生肖保存到历史记录
-      console.log('后台静默保存精选生肖');
-    } catch(e) {
-      console.error('后台静默保存精选生肖失败:', e);
-    }
+    console.log('精选生肖历史功能已移除');
+  },
+
+  /**
+   * 核对精选生肖与开奖结果 - 已移除
+   * @param {string} issue - 期数
+   * @param {string} result - 开奖结果
+   */
+  checkSelectedZodiacsResult: (issue, result) => {
+    console.log('精选生肖历史功能已移除');
   },
 
   /**

@@ -716,5 +716,12 @@ export const analysis = {
     
     // 重新分析
     analysis.renderZodiacAnalysis();
+  },
+
+  /**
+   * 启动定时获取开奖数据服务
+   */
+  startScheduledDataFetch: () => {
+    return dataFetch.startScheduledDataFetch();
   }
 };

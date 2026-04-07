@@ -54,28 +54,7 @@ export const StateManager = {
         lastDecisionPeriod: 0,
         holdPeriods: 0
       }
-    },
-    // 精选特码历史状态
-    specialHistory: [],
-    specialHistoryExpanded: false,
-    specialHistoryModeFilter: 'all', // 'all' | 'hot' | 'cold' | 'auto'
-    specialHistoryPage: 1, // 当前页码
-    specialHistoryPageSize: 50, // 每页显示数量
-    // 精选生肖历史状态
-    selectedZodiacHistory: [],
-    selectedZodiacHistoryExpanded: false,
-    selectedZodiacHistoryPage: 1,
-    selectedZodiacHistoryPageSize: 50,
-    // 特码热门top5历史状态
-    hotNumbersHistory: [],
-    hotNumbersHistoryExpanded: false,
-    hotNumbersHistoryPage: 1,
-    hotNumbersHistoryPageSize: 50,
-    // 预测历史状态
-    zodiacPredictionHistory: [],
-    zodiacPredictionHistoryExpanded: false,
-    mlPredictionHistory: [],
-    mlPredictionHistoryExpanded: false
+    }
   },
 
   /**
