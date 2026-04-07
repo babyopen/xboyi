@@ -2081,6 +2081,87 @@ input[type="checkbox"]{
   border-color: var(--primary);
 }
 
+.record-item.mismatch {
+  border-left: 4px solid #ff4d4f;
+}
+
+.record-item-zodiac.position-1 {
+  font-weight: bold;
+  color: #ff4d4f;
+}
+
+.record-item-zodiac.position-2 {
+  font-weight: bold;
+  color: #fa8c16;
+}
+
+.record-item-zodiac.position-3 {
+  font-weight: bold;
+  color: #faad14;
+}
+
+.record-item-zodiac.position-4,
+.record-item-zodiac.position-5,
+.record-item-zodiac.position-6 {
+  font-weight: normal;
+  color: var(--text);
+}
+
+.record-item-actual {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.record-item-actual.hit {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.record-item-actual.miss {
+  background-color: #fff2f0;
+  color: #ff4d4f;
+  border: 1px solid #ffccc7;
+}
+
+.record-item-periods {
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.record-item-period {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.period-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sub-text);
+  width: 60px;
+}
+
+.period-zodiacs {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.period-zodiac {
+  font-size: 12px;
+  padding: 2px 6px;
+  background-color: var(--light-bg);
+  border-radius: 4px;
+  color: var(--text);
+}
+
 .record-item-result {
   display: flex;
   justify-content: flex-end;

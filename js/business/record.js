@@ -74,11 +74,11 @@ export const record = {
       let resultHTML = '';
       if (recordItem.checked) {
         const hitClass = recordItem.matched ? 'hit' : 'miss';
-        resultHTML = `<div class="record-item-actual ${hitClass}">${recordItem.actualZodiac}</div>`;
+        resultHTML = `<div class="record-item-actual ${hitClass}">实际开奖: ${recordItem.actualZodiac}</div>`;
       }
 
       return `
-        <div class="record-item">
+        <div class="record-item ${recordItem.checked && !recordItem.matched ? 'mismatch' : ''}">
           <div class="record-item-header">
             <div class="record-item-issue">第${recordItem.issue}期</div>
             <div class="record-item-time">${formattedTime}</div>
@@ -89,6 +89,7 @@ export const record = {
             </div>
             ${resultHTML}
           </div>
+          ${recordItem.periodData ? record._renderPeriodData(recordItem.periodData) : ''}
         </div>
       `;
     }).join('');
@@ -122,10 +123,35 @@ export const record = {
       return '';
     }
     
-    return recordItem.zodiacs.map(zodiac => {
+    return recordItem.zodiacs.map((zodiac, index) => {
       const matchedClass = recordItem.checked && recordItem.matched && zodiac === recordItem.actualZodiac ? 'matched' : '';
-      return `<div class="record-item-zodiac ${matchedClass}">${zodiac}</div>`;
+      const positionClass = `position-${index + 1}`;
+      return `<div class="record-item-zodiac ${matchedClass} ${positionClass}">${index + 1}. ${zodiac}</div>`;
     }).join('');
+  },
+
+  /**
+   * 渲染期数数据
+   * @private
+   * @param {Object} periodData - 期数数据
+   * @returns {string} 渲染后的HTML字符串
+   */
+  _renderPeriodData: (periodData) => {
+    return `
+      <div class="record-item-periods">
+        ${Object.entries(periodData).map(([period, zodiacs]) => {
+          if (!zodiacs || !Array.isArray(zodiacs)) return '';
+          return `
+            <div class="record-item-period">
+              <div class="period-label">${period}期数据:</div>
+              <div class="period-zodiacs">
+                ${zodiacs.slice(0, 6).map((zodiac, index) => `<span class="period-zodiac">${index + 1}. ${zodiac}</span>`).join(' ')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
   },
 
   /**

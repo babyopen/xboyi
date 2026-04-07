@@ -601,56 +601,107 @@ export const prediction = {
   },
 
   /**
+   * 获取每期的生肖前6名数据
+   * @returns {Array} 前6名生肖数组
+   */
+  getTop6Zodiacs: () => {
+    try {
+      // 分析10期、20期、30期的数据
+      const periods = [10, 20, 30];
+      const zodiacScores = {};
+      
+      periods.forEach(period => {
+        const periodData = analysisCalc.calcZodiacAnalysis(period);
+        if(periodData && periodData.zodiacScores) {
+          Object.entries(periodData.zodiacScores).forEach(([zod, score]) => {
+            if (!zodiacScores[zod]) {
+              zodiacScores[zod] = 0;
+            }
+            zodiacScores[zod] += score;
+          });
+        }
+      });
+      
+      // 按总分排序，取前6名
+      const sortedZodiacs = Object.entries(zodiacScores)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([zod]) => zod);
+      
+      return sortedZodiacs;
+    } catch (error) {
+      console.error('获取生肖前6名失败:', error);
+      return [];
+    }
+  },
+
+  /**
+   * 获取当前期号
+   * @returns {string} 当前期号
+   */
+  getCurrentIssue: () => {
+    try {
+      // 从DOM中获取期号
+      const conclusionTitle = document.querySelector('.conclusion-title');
+      if (conclusionTitle) {
+        const titleText = conclusionTitle.textContent || conclusionTitle.innerText;
+        const issueMatch = titleText.match(/第(\d+)期/);
+        if (issueMatch && issueMatch[1]) {
+          return issueMatch[1];
+        }
+      }
+      
+      // 如果从DOM中获取失败，尝试从IssueManager获取
+      try {
+        const nextIssue = IssueManager.getNextIssue();
+        if (nextIssue && nextIssue.full) {
+          return nextIssue.full;
+        }
+      } catch (issueError) {
+        console.error('从IssueManager获取期号失败:', issueError);
+      }
+      
+      return '';
+    } catch (error) {
+      console.error('获取期号失败:', error);
+      return '';
+    }
+  },
+
+  /**
    * 保存精选生肖到记录页面
    */
   saveSelectedZodiacsToRecord: () => {
     try {
-      const selectedZodiacsMap = prediction.getSelectedZodiacs();
+      const top6Zodiacs = prediction.getTop6Zodiacs();
       
-      if (!selectedZodiacsMap || selectedZodiacsMap.size === 0) {
-        console.log('没有选中的生肖');
+      if (!top6Zodiacs || top6Zodiacs.length === 0) {
+        console.log('没有生肖数据');
         return;
       }
       
       // 获取当前期号
-      let issue = '';
-      try {
-        const nextIssue = IssueManager.getNextIssue();
-        
-        if (nextIssue && nextIssue.full) {
-          issue = nextIssue.full;
-        } else {
-          // 从DOM中获取期号
-          const conclusionTitle = document.querySelector('.conclusion-title span');
-          if (conclusionTitle) {
-            const titleText = conclusionTitle.textContent || conclusionTitle.innerText;
-            const issueMatch = titleText.match(/第(\d+)期/);
-            if (issueMatch && issueMatch[1]) {
-              issue = issueMatch[1];
-            }
-          }
-        }
-      } catch (issueError) {
-        console.error('获取期号失败:', issueError);
-      }
+      const issue = prediction.getCurrentIssue();
       
       if (!issue) {
         console.error('获取期号失败');
         return;
       }
       
+      console.log('开始保存生肖数据，期号:', issue);
+      console.log('生肖数据:', top6Zodiacs);
+      
       // 保存到记录页面
       import('./record.js').then(({ record }) => {
         try {
-          const zodiacs = Array.from(selectedZodiacsMap.keys());
-          if (!zodiacs || zodiacs.length === 0) {
-            console.error('生肖数据为空');
-            return;
-          }
-          
           const success = record.saveZodiacRecord({
             issue: issue,
-            zodiacs: zodiacs
+            zodiacs: top6Zodiacs,
+            periodData: {
+              10: prediction.getTopZodiacsByPeriod(10),
+              20: prediction.getTopZodiacsByPeriod(20),
+              30: prediction.getTopZodiacsByPeriod(30)
+            }
           });
           
           if (success) {
@@ -666,6 +717,24 @@ export const prediction = {
       });
     } catch(e) {
       console.error('保存精选生肖到记录页面失败:', e);
+    }
+  },
+
+  /**
+   * 根据指定期数获取前6名生肖
+   * @param {number} period - 期数
+   * @returns {Array} 前6名生肖数组
+   */
+  getTopZodiacsByPeriod: (period) => {
+    try {
+      const periodData = analysisCalc.calcZodiacAnalysis(period);
+      if(periodData && periodData.sortedZodiacs) {
+        return periodData.sortedZodiacs.slice(0, 6).map(([zod]) => zod);
+      }
+      return [];
+    } catch (error) {
+      console.error(`获取${period}期生肖前6名失败:`, error);
+      return [];
     }
   }
 };
