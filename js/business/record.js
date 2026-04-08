@@ -171,7 +171,7 @@ export const record = {
           if (!zodiacs || !Array.isArray(zodiacs)) return '';
           return `
             <div class="record-item-period">
-              <div class="period-label">${period}期数据:</div>
+              <div class="period-label">${period}期</div>
               <div class="period-zodiacs">
                 ${zodiacs.slice(0, 6).map((zodiac) => `<span class="period-zodiac">${zodiac}</span>`).join(' ')}
               </div>

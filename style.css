@@ -2508,18 +2508,72 @@ input[type="checkbox"]{
 }
 
 .period-zodiac {
-  padding: 4px 12px;
+  padding: 6px 12px;
   border-radius: 16px;
-  font-size: 12px;
-  background: rgba(0, 122, 255, 0.1);
-  color: var(--primary);
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  color: var(--text);
 }
 
 @media (prefers-color-scheme: dark) {
   .period-zodiac {
-    background: rgba(0, 122, 255, 0.2);
+    background: rgba(30, 30, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* 响应式设计 - 小屏幕设备 */
+@media (max-width: 480px) {
+  .record-item {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .record-item-zodiacs {
+    gap: 6px;
+  }
+  
+  .record-item-zodiac {
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 16px;
+  }
+  
+  .record-item-period {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .period-label {
+    min-width: auto;
+    font-size: 12px;
+  }
+  
+  .period-zodiacs {
+    gap: 6px;
+  }
+  
+  .period-zodiac {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 14px;
+  }
+  
+  .record-item-content {
+    gap: 12px;
+  }
+  
+  .record-item-issue {
+    font-size: 14px;
+  }
+  
+  .record-item-time {
+    font-size: 12px;
   }
 }
 
