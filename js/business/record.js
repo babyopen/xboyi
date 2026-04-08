@@ -106,7 +106,7 @@ export const record = {
     const displayIssue = latestRecord.issue || '';
     
     mainCard.innerHTML = `
-      <div class="record-item-header" style="cursor: pointer;" onclick="record.toggleZodiacRecords()">
+      <div class="record-item-header" style="cursor: pointer;" onclick="Business.record.toggleZodiacRecords()">
         <div class="record-item-issue">第${displayIssue}期</div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <div class="record-item-time">${latestFormattedTime}</div>
@@ -338,7 +338,7 @@ export const record = {
     const displayIssue = latestRecord.issue || '';
     
     mainCard.innerHTML = `
-      <div class="record-item-header" style="cursor: pointer;" onclick="record.toggleNumberRecords()">
+      <div class="record-item-header" style="cursor: pointer;" onclick="Business.record.toggleNumberRecords()">
         <div class="record-item-issue">第${displayIssue}期</div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <div class="record-item-time">${latestFormattedTime}</div>
