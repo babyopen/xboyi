@@ -166,7 +166,7 @@ export const record = {
    */
   _renderPeriodData: (periodData) => {
     return `
-      <div class="record-item-periods collapsed" data-periods="${Object.keys(periodData).length}">
+      <div class="record-item-periods">
         ${Object.entries(periodData).map(([period, zodiacs]) => {
           if (!zodiacs || !Array.isArray(zodiacs)) return '';
           return `
@@ -178,7 +178,6 @@ export const record = {
             </div>
           `;
         }).join('')}
-        <div class="period-toggle">展开</div>
       </div>
     `;
   },
@@ -220,22 +219,6 @@ export const record = {
         }
       });
     }
-
-    // 期数数据折叠/展开事件
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('period-toggle')) {
-        const periodsContainer = e.target.closest('.record-item-periods');
-        const isCollapsed = periodsContainer.classList.contains('collapsed');
-        
-        if (isCollapsed) {
-          periodsContainer.classList.remove('collapsed');
-          e.target.textContent = '收起';
-        } else {
-          periodsContainer.classList.add('collapsed');
-          e.target.textContent = '展开';
-        }
-      }
-    });
   },
 
   /**

@@ -537,7 +537,7 @@ export const prediction = {
         prediction.updateMLServiceUI(false);
       }
     } catch(e) {
-      // 服务不可用，静默处理
+      // 服务不可用，静默处理，不显示错误信息
       prediction.updateMLServiceUI(false);
     }
   },

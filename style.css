@@ -1,75 +1,73 @@
 /* 全局CSS变量（主题配置，一键修改样式） */
 :root{
-  /* iOS原生简洁风格 - 色彩系统 */
+  /* 浅色主题 - 色彩系统 */
   /* 主色 */
-  --primary:#007AFF;          /* iOS标准蓝色 */
+  --primary:#007AFF;          /* 主色 */
+  --primary-light:#4DA3FF;     /* 主色浅 */
+  --primary-dark:#0056CC;      /* 主色深 */
   
   /* 辅助色 */
-  --success:#34C759;           /* iOS成功色 */
-  --warning:#FF9500;           /* iOS警告色 */
-  --danger:#FF3B30;            /* iOS危险色 */
-  --blue:#007AFF;              /* 蓝色（保留彩球颜色） */
-  --green:#34C759;             /* 绿色（保留彩球颜色） */
+  --secondary:#5856D6;         /* 辅助色 */
+  --success:#34C759;           /* 成功色 */
+  --warning:#FF9500;           /* 警告色 */
+  --danger:#FF3B30;            /* 危险色 */
+  --info:#5AC8FA;              /* 信息色 */
   
-  /* 中性色 - iOS标准 */
-  --text:#1a1a1a;              /* 主文字黑色 */
-  --text-secondary:#8e8e93;    /* 次要文字灰色 */
-  --text-tertiary:#aeaeb2;     /* 辅助文字 */
-  --text-disabled:#c7c7cc;     /* 禁用文字 */
+  /* 中性色 */
+  --text:#000000;              /* 主文字 */
+  --text-secondary:#3C3C43;    /* 次要文字 */
+  --text-tertiary:#8E8E93;     /* 辅助文字 */
+  --text-disabled:#C7C7CC;     /* 禁用文字 */
   
-  /* 背景色 - iOS简洁白色背景 */
+  /* 背景色 */
   --bg:#F2F2F7;                /* 主背景 */
   --bg-secondary:#F8F8F8;      /* 次要背景 */
-  --bg-tertiary:#FFFFFF;       /* 卡片背景白色 */
+  --bg-tertiary:#E5E5EA;       /* 辅助背景 */
+  --bg-disabled:#F2F2F7;       /* 禁用背景 */
   
   /* 卡片和边框 */
-  --card:#FFFFFF;               /* 卡片背景白色 */
-  --border:#E5E5EA;            /* iOS标准边框色 */
-  --border-light:#F2F2F7;      /* 浅边框 */
+  --card:#FFFFFF;               /* 卡片背景 */
+  --border:rgba(0,0,0,0.08);   /* 边框色 */
+  --border-light:rgba(0,0,0,0.05); /* 浅边框 */
+  --border-dark:rgba(0,0,0,0.12);  /* 深边框 */
   
   /* 其他 */
   --overlay:rgba(0,0,0,0.75);   /* 遮罩色 */
   
-  /* 通用样式变量 - iOS简洁风格 */
-  --shadow-sm:none;             /* 移除小阴影 */
-  --shadow:none;                /* 移除阴影 */
-  --shadow-lg:none;             /* 移除大阴影 */
+  /* 通用样式变量 */
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.06);
+  --shadow:0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg:0 8px 24px rgba(0,0,0,0.12);
   --radius-sm:8px;
-  --radius:12px;               /* iOS卡片圆角12pt */
+  --radius:12px;
   --radius-lg:16px;
   --ball-size:28px;
-  
   /* 安全区变量 */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  
-  /* 动画时长变量 - iOS简洁动画 */
+  /* 动画时长变量 */
   --anim-fast:0.2s;
   --anim-normal:0.3s;
   --anim-slow:0.5s;
-  
   /* 布局常量 */
   --top-card-height:210px;
   --top-offset:260px;
   --preview-max-count:8;
-  
-  /* 间距变量 - iOS宽松、透气间距 */
+  /* 间距变量 */
   --spacing-xs:4px;
   --spacing-sm:8px;
-  --spacing-md:16px;
-  --spacing-lg:20px;
-  --spacing-xl:24px;
-  --spacing-xxl:32px;
-  
-  /* 字体大小变量 - iOS标准字体大小 */
+  --spacing-md:12px;
+  --spacing-lg:16px;
+  --spacing-xl:20px;
+  --spacing-xxl:24px;
+  /* 字体大小变量 */
   --font-size-xs:12px;
-  --font-size-sm:14px;
-  --font-size-md:16px;
-  --font-size-lg:17px;
-  --font-size-xl:19px;
-  --font-size-2xl:22px;
-  --font-size-3xl:28px;
-  
+  --font-size-sm:13px;
+  --font-size-md:14px;
+  --font-size-lg:16px;
+  --font-size-xl:18px;
+  --font-size-2xl:20px;
+  --font-size-3xl:24px;
   /* 导航栏高度 */
   --nav-height:80px;
 }
@@ -77,32 +75,36 @@
 /* 深色模式自动适配 */
 @media (prefers-color-scheme: dark) {
   :root{
-    /* iOS深色模式简洁风格 */
+    /* 深色主题 - 色彩系统 */
     /* 主色 */
-    --primary:#0A84FF;          /* iOS深色模式蓝色 */
+    --primary:#0A84FF;          /* 主色 */
+    --primary-light:#5AC8FA;     /* 主色浅 */
+    --primary-dark:#0066CC;      /* 主色深 */
     
     /* 辅助色 */
-  --success:#30D158;           /* iOS深色模式成功色 */
-  --warning:#FF9F0A;           /* iOS深色模式警告色 */
-  --danger:#FF453A;            /* iOS深色模式危险色 */
-  --blue:#0A84FF;              /* 蓝色（保留彩球颜色） */
-  --green:#30D158;             /* 绿色（保留彩球颜色） */
+    --secondary:#5E5CE6;         /* 辅助色 */
+    --success:#30D158;           /* 成功色 */
+    --warning:#FF9F0A;           /* 警告色 */
+    --danger:#FF453A;            /* 危险色 */
+    --info:#64D2FF;              /* 信息色 */
     
-    /* 中性色 - iOS深色模式标准 */
-    --text:#FFFFFF;              /* 主文字白色 */
-    --text-secondary:#98989F;    /* 次要文字灰色 */
-    --text-tertiary:#636366;     /* 辅助文字 */
-    --text-disabled:#48484A;     /* 禁用文字 */
+    /* 中性色 */
+    --text:#FFFFFF;              /* 主文字 */
+    --text-secondary:#D1D1D6;    /* 次要文字 */
+    --text-tertiary:#98989F;     /* 辅助文字 */
+    --text-disabled:#636366;     /* 禁用文字 */
     
-    /* 背景色 - iOS深色模式简洁背景 */
-    --bg:#000000;                /* 主背景黑色 */
-    --bg-secondary:#1C1C1E;      /* 次要背景 */
-    --bg-tertiary:#2C2C2E;       /* 卡片背景 */
+    /* 背景色 */
+    --bg:#000000;                /* 主背景 */
+    --bg-secondary:#2C2C2E;      /* 次要背景 */
+    --bg-tertiary:#3A3A3C;       /* 辅助背景 */
+    --bg-disabled:#1C1C1E;       /* 禁用背景 */
     
     /* 卡片和边框 */
-    --card:#2C2C2E;               /* 卡片背景 */
-    --border:#38383A;            /* iOS深色模式边框色 */
-    --border-light:#1C1C1E;      /* 浅边框 */
+    --card:#1C1C1E;               /* 卡片背景 */
+    --border:rgba(255,255,255,0.1);   /* 边框色 */
+    --border-light:rgba(255,255,255,0.05); /* 浅边框 */
+    --border-dark:rgba(255,255,255,0.15);  /* 深边框 */
     
     /* 其他 */
     --overlay:rgba(0,0,0,0.85);   /* 遮罩色 */
@@ -275,13 +277,15 @@ p, .text-md {
   background:var(--card);
   border-radius:var(--radius);
   margin-bottom:var(--spacing-md);
+  box-shadow:var(--shadow);
   overflow:hidden;
   transition: all var(--anim-fast);
 }
 
-/* 卡片变体 - iOS简洁风格 */
+/* 卡片变体 */
 .card-border {
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 .card-compact {
@@ -291,6 +295,7 @@ p, .text-md {
 .card-large {
   margin-bottom: var(--spacing-lg);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
 }
 
 .card-header{
@@ -958,23 +963,26 @@ p, .text-md {
   width:clamp(40px, 10vw, 56px);
   height:clamp(40px, 10vw, 56px);
   border-radius:50%;
-  background:var(--card);
+  background:rgba(255,255,255,0.2);
+  -webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);
   display:flex;
   align-items:center;
   justify-content:center;
   cursor:pointer;
-  transition:all var(--anim-fast);
+  box-shadow:0 8px 32px rgba(0,0,0,0.1);
+  transition:all 0.3s ease;
   touch-action:manipulation;
   -webkit-user-select:none;
   user-select:none;
   color:var(--text);
-  border:1px solid var(--border);
+  border:1px solid rgba(255,255,255,0.4);
   overflow:hidden;
 }
 @media (prefers-color-scheme: dark) {
   .quick-nav-btn{
-    background:var(--card);
-    border:1px solid var(--border);
+    background:rgba(30,30,30,0.2);
+    border:1px solid rgba(255,255,255,0.4);
   }
 }
 .quick-nav-btn:active{
@@ -982,7 +990,7 @@ p, .text-md {
 }
 .quick-nav-btn.active{
   color:#fff;
-  background:var(--primary);
+  background:rgba(255,107,53,0.9);
   border:none;
 }
 
@@ -994,19 +1002,22 @@ p, .text-md {
   z-index:1000;
   width:calc(100% - clamp(24px, 8vw, 32px));
   max-width:360px;
-  background:var(--card);
+  background:rgba(255,255,255,0.5);
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
   border-radius:clamp(12px, 4vw, 16px);
+  box-shadow:var(--shadow);
   padding:clamp(10px, 3vw, 12px);
   opacity:0;
   visibility:hidden;
   transform:translateY(10px);
   transition:all var(--anim-normal);
-  border:1px solid var(--border);
+  border:1px solid rgba(0,0,0,0.1);
 }
 @media (prefers-color-scheme: dark) {
   .quick-nav-menu{
-    background:var(--card);
-    border:1px solid var(--border);
+    background:rgba(30,30,30,0.5);
+    border:1px solid rgba(255,255,255,0.15);
   }
 }
 .quick-nav-menu.show{
@@ -1046,7 +1057,9 @@ p, .text-md {
   width:clamp(38px, 11vw, 44px);
   height:clamp(38px, 11vw, 44px);
   border-radius:50%;
-  background:var(--primary);
+  background:rgba(0,122,255,0.5);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
   color:#FFFFFF;
   border:none;
   font-size:clamp(15px, 4.5vw, 18px);
@@ -1747,11 +1760,12 @@ input[type="checkbox"]{
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
-.ball.red { background: var(--danger); }
-.ball.blue { background: var(--primary); }
-.ball.green { background: var(--success); }
+.ball.red { background: radial-gradient(circle at 30% 30%, #ff4d4f, #cf1322); }
+.ball.blue { background: radial-gradient(circle at 30% 30%, #40a9ff, #096dd9); }
+.ball.green { background: radial-gradient(circle at 30% 30%, #73d13d, #389e0d); }
 
 .ball-zodiac {
   font-size: clamp(9px, 3vw, 13px);
@@ -2195,7 +2209,7 @@ input[type="checkbox"]{
 
 /* 记录页面样式 */
 .record-container {
-  padding: 16px;
+  padding: 24px 16px;
   max-width: 600px;
   margin: 0 auto;
 }
@@ -2204,11 +2218,12 @@ input[type="checkbox"]{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  padding: 0 8px;
 }
 
 .record-header h2 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   margin: 0;
   color: var(--text);
@@ -2217,35 +2232,60 @@ input[type="checkbox"]{
 .record-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 16px;
 }
 
+/* 液态玻璃卡片 */
 .record-item {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 20px;
   position: relative;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* 深色模式下的玻璃质感 */
+@media (prefers-color-scheme: dark) {
+  .record-item {
+    background: rgba(30, 30, 30, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.record-item:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .record-item-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .record-item-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }
 
 .record-item-issue {
-  font-size: var(--font-size-lg);
+  font-size: 16px;
   font-weight: 600;
   color: var(--text);
 }
 
 .record-item-time {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  font-size: 13px;
+  color: var(--sub-text);
 }
 
 .record-item-content {
@@ -2253,183 +2293,275 @@ input[type="checkbox"]{
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--spacing-md);
+  gap: 16px;
 }
 
 .record-item-zodiacs {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: 8px;
   flex-wrap: wrap;
   flex: 1;
 }
 
+/* 玻璃胶囊标签 */
 .record-item-zodiac {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-size: var(--font-size-sm);
-  background: var(--bg-secondary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   color: var(--text);
-  transition: all var(--anim-fast);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
+@media (prefers-color-scheme: dark) {
+  .record-item-zodiac {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* 选中态系统蓝 */
 .record-item-zodiac.matched {
   background: var(--primary);
   color: #fff;
   border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .record-item.mismatch {
-  border-left: 3px solid var(--danger);
+  border-left: 4px solid #ff4d4f;
 }
 
 .record-item-numbers {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: 8px;
   flex-wrap: wrap;
   flex: 1;
 }
 
 .record-item-number {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-size: var(--font-size-sm);
-  background: var(--bg-secondary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   color: var(--text);
-  transition: all var(--anim-fast);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .record-item-number {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
 }
 
 .record-item-number.matched {
   background: var(--primary);
   color: #fff;
   border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .record-item-type {
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
-  margin-top: var(--spacing-md);
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text);
   align-self: flex-start;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* 移除花里胡哨的排名颜色 */
-.record-item-zodiac.position-1,
-.record-item-zodiac.position-2,
-.record-item-zodiac.position-3,
+@media (prefers-color-scheme: dark) {
+  .record-item-type {
+    background: rgba(30, 30, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* 位置样式 */
+.record-item-zodiac.position-1 {
+  font-weight: 700;
+  color: #ff4500;
+  border-color: #ff4500;
+}
+
+.record-item-zodiac.position-2 {
+  font-weight: 700;
+  color: #ff8c00;
+  border-color: #ff8c00;
+}
+
+.record-item-zodiac.position-3 {
+  font-weight: 700;
+  color: #ffd700;
+  border-color: #ffd700;
+}
+
 .record-item-zodiac.position-4,
 .record-item-zodiac.position-5,
 .record-item-zodiac.position-6 {
-  font-weight: normal;
+  font-weight: 500;
   color: var(--text);
-  border-color: var(--border);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .record-item-zodiac.position-4,
+  .record-item-zodiac.position-5,
+  .record-item-zodiac.position-6 {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* 匹配的位置样式 */
+.record-item-zodiac.position-1.matched {
+  background: #ff4500;
+  color: #fff;
+  border-color: #ff4500;
+}
+
+.record-item-zodiac.position-2.matched {
+  background: #ff8c00;
+  color: #fff;
+  border-color: #ff8c00;
+}
+
+.record-item-zodiac.position-3.matched {
+  background: #ffd700;
+  color: #000;
+  border-color: #ffd700;
 }
 
 .record-item-actual {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius);
-  font-size: var(--font-size-sm);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
   font-weight: 600;
-  flex-shrink: 0;
-  min-width: 70px;
-  text-align: center;
-  background: var(--primary);
-  color: #fff;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .record-item-actual {
+    background: rgba(30, 30, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }
 
 .record-item-actual.hit {
-  background-color: var(--success);
+  color: #52c41a;
+  font-weight: 700;
+  background: rgba(82, 196, 26, 0.1);
+  border-color: #52c41a;
 }
 
 .record-item-actual.miss {
-  background-color: var(--danger);
+  color: #ff4d4f;
+  font-weight: 700;
+  background: rgba(255, 77, 79, 0.1);
+  border-color: #ff4d4f;
 }
 
+/* 期数数据样式 */
 .record-item-periods {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-md);
-  background: var(--bg-secondary);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  width: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .record-item-periods {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }
 
 .record-item-period {
-  margin-bottom: var(--spacing-sm);
   display: flex;
   align-items: center;
+  margin-bottom: 8px;
+  gap: 12px;
 }
 
 .record-item-period:last-child {
   margin-bottom: 0;
 }
 
-/* 折叠功能样式 */
-.record-item-periods.collapsed .record-item-period:not(:first-child) {
-  display: none;
-}
-
-.period-toggle {
-  margin-top: var(--spacing-sm);
-  text-align: center;
-  font-size: var(--font-size-sm);
-  color: var(--primary);
-  cursor: pointer;
-  padding: var(--spacing-xs) 0;
-  transition: color var(--anim-fast);
-}
-
-.period-toggle:active {
-  opacity: 0.6;
-}
-
 .period-label {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
   color: var(--sub-text);
-  width: 60px;
-  flex-shrink: 0;
+  min-width: 70px;
 }
 
 .period-zodiacs {
-  flex: 1;
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
 .period-zodiac {
+  padding: 4px 12px;
+  border-radius: 16px;
   font-size: 12px;
-  padding: 3px 8px;
-  background-color: var(--bg-secondary);
-  border-radius: 4px;
-  border: 1px solid var(--border);
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--primary);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
+@media (prefers-color-scheme: dark) {
+  .period-zodiac {
+    background: rgba(0, 122, 255, 0.2);
+  }
+}
+
+/* 结果样式 */
 .record-item-result {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  width: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .record-item-result {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }
 
 .record-item-actual {
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
+  color: var(--text);
 }
 
 .record-item-actual.hit {
-  background: var(--primary);
-  color: #fff;
+  color: #52c41a;
+  font-weight: 700;
 }
 
 .record-item-actual.miss {
-  background: var(--danger);
-  color: #fff;
+  color: #ff4d4f;
+  font-weight: 700;
 }
 
 .record-item-status {
@@ -2438,49 +2570,116 @@ input[type="checkbox"]{
 }
 
 .record-item-checked {
-  font-size: 11px;
-  color: var(--sub-text);
-  margin-top: 8px;
-  text-align: right;
+  color: #52c41a;
+  font-weight: 600;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .record-container {
-    padding: 12px;
+    padding: 16px;
   }
   
   .record-item {
-    padding: 12px;
-  }
-  
-  .record-item-zodiac {
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-  
-  .record-item-actual {
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-}
-
-@media (max-width: 480px) {
-  .record-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    padding: 16px;
   }
   
   .record-item-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
   }
   
-  .record-item-result {
-    flex-direction: column;
-    align-items: flex-start;
+  .record-item-issue {
+    font-size: 14px;
+  }
+  
+  .record-item-zodiac {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .record-item-number {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+/* 深色模式 */
+@media (prefers-color-scheme: dark) {
+  .record-container {
+    background: var(--bg);
+  }
+  
+  .record-header h2 {
+    color: var(--text);
+  }
+  
+  .record-item {
+    background: rgba(30, 30, 30, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  
+  .record-item-issue {
+    color: var(--text);
+  }
+  
+  .record-item-time {
+    color: var(--sub-text);
+  }
+  
+  .record-item-zodiac {
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .record-item-number {
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .record-item-type {
+    color: var(--text);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .period-label {
+    color: var(--sub-text);
+  }
+  
+  .record-item-actual {
+    color: var(--text);
+  }
+  
+  .record-item-status {
+    color: var(--sub-text);
+  }
+}
+
+/* 灵动岛适配 */
+@media (max-width: 480px) {
+  .record-container {
+    padding: 16px 12px;
+  }
+  
+  .record-item {
+    border-radius: 14px;
+  }
+  
+  .record-item-zodiacs {
+    gap: 6px;
+  }
+  
+  .record-item-zodiac {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  
+  .record-item-number {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+}
     gap: 4px;
   }
 }
@@ -3517,19 +3716,26 @@ input[type="checkbox"]{
 
 .zodiac-prediction-item {
   background: var(--bg-secondary);
-  border-radius: var(--radius);
+  border-radius: 12px;
   padding: 10px 8px;
   text-align: center;
-  transition: all var(--anim-fast);
+  transition: all 0.2s ease;
   color: var(--text);
 }
 
-/* 移除花里胡哨的渐变排名效果 */
-.zodiac-prediction-item.top-1,
-.zodiac-prediction-item.top-2,
+.zodiac-prediction-item.top-1 {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+}
+
+.zodiac-prediction-item.top-2 {
+  background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
+  color: #000;
+}
+
 .zodiac-prediction-item.top-3 {
-  background: var(--bg-secondary);
-  color: var(--text);
+  background: linear-gradient(135deg, #CD7F32, #8B4513);
+  color: #fff;
 }
 
 .zodiac-prediction-zodiac {
@@ -3891,15 +4097,23 @@ input[type="checkbox"]{
 
 .mode-btn.active {
   opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* 移除花里胡哨的渐变效果 */
-.mode-btn[data-mode="hot"].active,
-.mode-btn[data-mode="cold"].active,
+.mode-btn[data-mode="hot"].active {
+  background: linear-gradient(135deg, #ff6b35, #f7931e) !important;
+  border-color: #ff6b35 !important;
+}
+
+.mode-btn[data-mode="cold"].active {
+  background: linear-gradient(135deg, #00d2ff, #3a7bd5) !important;
+  border-color: #00d2ff !important;
+}
+
 .mode-btn[data-mode="auto"].active {
-  background: var(--primary) !important;
-  border-color: var(--primary) !important;
-  color: #fff !important;
+  background: linear-gradient(135deg, #11998e, #38ef7d) !important;
+  border-color: #11998e !important;
 }
 
 .mode-btn:active {
@@ -3922,6 +4136,8 @@ input[type="checkbox"]{
 
 .special-history-mode-btn.active {
   opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .special-history-mode-btn[data-mode="all"].active {
@@ -3930,12 +4146,14 @@ input[type="checkbox"]{
   color: #fff !important;
 }
 
-/* 移除花里胡哨的渐变效果 */
-.special-history-mode-btn[data-mode="hot"].active,
+.special-history-mode-btn[data-mode="hot"].active {
+  background: linear-gradient(135deg, #ff6b35, #f7931e) !important;
+  border-color: #ff6b35 !important;
+}
+
 .special-history-mode-btn[data-mode="cold"].active {
-  background: var(--primary) !important;
-  border-color: var(--primary) !important;
-  color: #fff !important;
+  background: linear-gradient(135deg, #00d2ff, #3a7bd5) !important;
+  border-color: #00d2ff !important;
 }
 
 
