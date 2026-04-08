@@ -128,13 +128,6 @@ async function initApp() {
     
 
     
-    // 初始化ML服务状态检测（可选的，不影响主功能）
-    try {
-      Business.initMLServiceChecker();
-    } catch(e) {
-      console.debug('ML服务初始化失败，不影响主功能:', e.message);
-    }
-    
     // 应用初始化完成
     console.log('应用初始化完成');
     PerformanceMonitor.logMetrics();

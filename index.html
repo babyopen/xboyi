@@ -483,61 +483,6 @@
               <div id="selectedZodiacsGrid" class="selected-zodiacs-grid"></div>
             </div>
 
-            <!-- 生肖预测2.0模块 (ML模型) -->
-            <div class="zodiac-prediction-v2">
-              <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
-                <span>🚀 生肖预测2.0 (ML模型)</span>
-                <div style="display:flex;gap:6px;align-items:center;">
-                  <!-- 服务状态指示器 -->
-                  <span id="mlServiceStatus" class="service-status" style="font-size:12px;padding:4px 8px;border-radius:4px;background:#ff6b6b;color:white;">
-                    🔴 服务未启动
-                  </span>
-                  <!-- 启动模型按钮 -->
-                  <button id="mlStartBtn" class="btn-mini" onclick="Business.startMLService()" title="启动ML模型服务" style="background:#2196F3;color:white;display:inline-flex;align-items:center;gap:4px;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                    启动服务
-                  </button>
-                  <!-- ML预测按钮 -->
-                  <button id="mlPredictBtn" class="btn-mini ml-predict-btn" onclick="Business.runMLPrediction()" title="运行ML预测" style="background:#4CAF50;color:white;display:inline-flex;align-items:center;gap:4px;" disabled>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    ML预测
-                  </button>
-                </div>
-              </div>
-              
-              <!-- 启动说明区域 -->
-              <div id="mlStartInstructions" style="display:none;margin-bottom:15px;padding:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;">
-                <div style="font-weight:bold;color:#856404;margin-bottom:8px;">📋 启动步骤</div>
-                <div style="font-size:13px;color:#856404;line-height:1.6;">
-                  1. 打开终端，进入项目目录<br>
-                  2. 执行命令：<code style="background:#fff;padding:2px 6px;border-radius:3px;">python3 python/ml_api_server.py</code><br>
-                  3. 等待显示"模型加载成功"<br>
-                  4. 服务将自动检测到并变为就绪状态
-                </div>
-                <div style="margin-top:10px;">
-                  <button class="btn-mini" onclick="Business.copyMLStartCommand()" style="background:#ffc107;color:#333;">
-                    📋 复制启动命令
-                  </button>
-                  <button class="btn-mini" onclick="Business.toggleMLInstructions()" style="margin-left:8px;">
-                    关闭说明
-                  </button>
-                </div>
-              </div>
-              
-              <!-- ML预测结果区域 -->
-              <div id="mlPredictionResult" style="display:none;margin-bottom:15px;padding:15px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:8px;color:white;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                  <span style="font-weight:bold;font-size:16px;">🤖 ML模型预测结果</span>
-                  <span id="mlPredictionTime" style="font-size:12px;opacity:0.8;"></span>
-                </div>
-                <div id="mlPredictionContent"></div>
-              </div>
-            </div>
-
             <div class="core-conclusion">
               <div class="conclusion-title">🔥 特码真实共振组合</div>
               <div class="conclusion-item" id="combo1">1. 首选：--</div>
