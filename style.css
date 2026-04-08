@@ -178,6 +178,45 @@
  }
 
 
+/* iOS风格卡片 - 毛玻璃+原生阴影 */ 
+ .ios-card { 
+   background: rgba(255, 255, 255, 0.8); 
+   backdrop-filter: blur(20px); 
+   -webkit-backdrop-filter: blur(20px); 
+   border-radius: var(--ios-corner-radius); 
+   box-shadow: var(--ios-shadow-sm); 
+   border: 1px solid rgba(0, 0, 0, 0.05); 
+   overflow: hidden; 
+   transition: var(--ios-transition); 
+ } 
+ 
+ /* 深色模式iOS卡片 */ 
+ @media (prefers-color-scheme: dark) { 
+   .ios-card { 
+     background: rgba(30, 30, 30, 0.8); 
+     border: 1px solid rgba(255, 255, 255, 0.1); 
+   } 
+ } 
+ 
+ /* iOS卡片头部 - 原生样式 */ 
+ .ios-card-header { 
+   padding: 16px 20px; 
+   border-bottom: 1px solid var(--ios-gray-200); 
+   display: flex; 
+   justify-content: space-between; 
+   align-items: center; 
+ } 
+ 
+ .ios-card-body { 
+   padding: 20px; 
+ } 
+ 
+ /* iOS卡片交互 - 点击反馈（仿原生） */ 
+ .ios-card:active { 
+   box-shadow: var(--ios-shadow-xs); 
+   transform: translateY(0.5px); 
+ }
+
 /* 统一动画过渡效果 */
 .btn, .btn-mini, .btn-line, .tag, .card, .nav-tab, .quick-nav-btn, .back-top-btn, .analysis-item, .filter-save-item, .record-item {
   transition: all var(--anim-fast);
