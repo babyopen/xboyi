@@ -2733,7 +2733,6 @@ input[type="checkbox"]{
   }
 }
 
-/* iOS弹窗样式 */
 /* iOS弹窗遮罩 */ 
  .ios-modal-overlay { 
    position: fixed; 
@@ -2753,8 +2752,8 @@ input[type="checkbox"]{
  .ios-modal { 
    width: 100%; 
    max-width: 280px; 
-   background: var(--ios-gray-50); 
-   border-radius: var(--ios-corner-radius); 
+   background: #FFFFFF; 
+   border-radius: 13px; 
    overflow: hidden; 
    box-shadow: var(--ios-shadow-lg); 
    animation: ios-modal-in 0.3s cubic-bezier(0.35, 0, 0.25, 1); 
