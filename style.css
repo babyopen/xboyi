@@ -2417,17 +2417,20 @@ input[type="checkbox"]{
 
 /* 记录页面样式 */
 .record-container {
-  padding: 24px 0;
+  padding: 20px 0;
   width: 100%;
   margin: 0 auto;
+  max-width: 1000px;
+  box-sizing: border-box;
 }
 
 .record-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   padding: 0 16px;
+  box-sizing: border-box;
 }
 
 .record-header h2 {
@@ -2440,8 +2443,9 @@ input[type="checkbox"]{
 .record-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   padding: 0 16px;
+  box-sizing: border-box;
 }
 
 /* 液态玻璃卡片 */
@@ -2449,11 +2453,12 @@ input[type="checkbox"]{
   background: var(--ios-gray-50);
   border-radius: var(--ios-corner-radius);
   box-shadow: var(--ios-shadow-sm);
-  padding: 12px;
+  padding: 16px;
   position: relative;
   border: 1px solid var(--ios-gray-200);
   transition: var(--ios-transition);
-  margin-bottom: 12px;
+  margin-bottom: 0;
+  box-sizing: border-box;
 }
 
 /* 深色模式下的卡片 */
@@ -2474,9 +2479,10 @@ input[type="checkbox"]{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 6px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--ios-gray-200);
+  box-sizing: border-box;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -2499,21 +2505,23 @@ input[type="checkbox"]{
 .record-item-content {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 16px;
+  box-sizing: border-box;
 }
 
 .record-item-zodiacs {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   flex: 1;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 /* 玻璃胶囊标签 */
 .record-item-zodiac {
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-radius: 16px;
   font-size: 13px;
   font-weight: 500;
@@ -2521,6 +2529,7 @@ input[type="checkbox"]{
   border: 1px solid var(--ios-gray-200);
   color: var(--ios-gray-600);
   transition: var(--ios-transition);
+  box-sizing: border-box;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -2549,6 +2558,7 @@ input[type="checkbox"]{
   gap: 8px;
   flex-wrap: wrap;
   flex: 1;
+  box-sizing: border-box;
 }
 
 .record-item-number {
@@ -2697,10 +2707,11 @@ input[type="checkbox"]{
 
 /* 期数数据样式 */
 .record-item-periods {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 1px solid var(--ios-gray-200);
   width: 100%;
+  box-sizing: border-box;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -2712,8 +2723,9 @@ input[type="checkbox"]{
 .record-item-period {
   display: flex;
   align-items: center;
-  margin-bottom: 6px;
-  gap: 6px;
+  margin-bottom: 8px;
+  gap: 8px;
+  box-sizing: border-box;
 }
 
 .record-item-period:last-child {
@@ -2728,19 +2740,21 @@ input[type="checkbox"]{
 
 .period-zodiacs {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   flex: 1;
+  box-sizing: border-box;
 }
 
 .period-zodiac {
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 14px;
   font-size: 12px;
   font-weight: 500;
   background: var(--ios-gray-100);
   border: 1px solid var(--ios-gray-200);
   color: var(--ios-gray-600);
+  box-sizing: border-box;
 }
 
 @media (prefers-color-scheme: dark) {
