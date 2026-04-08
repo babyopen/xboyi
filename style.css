@@ -2489,7 +2489,7 @@ input[type="checkbox"]{
   display: flex;
   align-items: center;
   margin-bottom: 8px;
-  gap: 12px;
+  gap: 8px;
 }
 
 .record-item-period:last-child {
