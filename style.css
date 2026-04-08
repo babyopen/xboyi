@@ -2434,7 +2434,7 @@ input[type="checkbox"]{
   font-size: 20px;
   font-weight: 600;
   margin: 0;
-  color: #ffffff;
+  color: var(--ios-gray-600);
 }
 
 .record-list {
@@ -2446,28 +2446,28 @@ input[type="checkbox"]{
 
 /* 液态玻璃卡片 */
 .record-item {
-  background: #1a1a1a;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: var(--ios-gray-50);
+  border-radius: var(--ios-corner-radius);
+  box-shadow: var(--ios-shadow-sm);
   padding: 12px;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
+  border: 1px solid var(--ios-gray-200);
+  transition: var(--ios-transition);
   margin-bottom: 12px;
 }
 
-/* 深色模式下的玻璃质感 */
+/* 深色模式下的卡片 */
 @media (prefers-color-scheme: dark) {
   .record-item {
-    background: #1a1a1a;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    background: var(--ios-gray-700);
+    border: 1px solid var(--ios-gray-200);
+    box-shadow: var(--ios-shadow-md);
   }
 }
 
 .record-item:active {
   transform: scale(0.98);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--ios-shadow-xs);
 }
 
 .record-item-header {
@@ -2476,24 +2476,24 @@ input[type="checkbox"]{
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ios-gray-200);
 }
 
 @media (prefers-color-scheme: dark) {
   .record-item-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--ios-gray-200);
   }
 }
 
 .record-item-issue {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--ios-gray-600);
 }
 
 .record-item-time {
   font-size: 13px;
-  color: #888888;
+  color: var(--ios-gray-400);
 }
 
 .record-item-content {
@@ -2517,29 +2517,31 @@ input[type="checkbox"]{
   border-radius: 16px;
   font-size: 13px;
   font-weight: 500;
-  background: #333333;
-  border: 1px solid #555555;
-  color: #ffffff;
-  transition: all 0.3s ease;
+  background: var(--ios-gray-100);
+  border: 1px solid var(--ios-gray-200);
+  color: var(--ios-gray-600);
+  transition: var(--ios-transition);
 }
 
 @media (prefers-color-scheme: dark) {
   .record-item-zodiac {
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--ios-gray-600);
+    border: 1px solid var(--ios-gray-200);
+    color: var(--ios-gray-100);
   }
 }
 
 /* 选中态系统蓝 */
 .record-item-zodiac.matched {
-  background: var(--primary);
+  background: var(--ios-blue);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--ios-blue);
   box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
   transform: scale(1.05);
 }
 
 .record-item.mismatch {
-  border-left: 4px solid #ff4d4f;
+  border-left: 4px solid var(--ios-red);
 }
 
 .record-item-numbers {
@@ -2554,24 +2556,24 @@ input[type="checkbox"]{
   border-radius: 20px;
   font-size: 14px;
   font-weight: 500;
-  background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  color: var(--text);
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--ios-gray-100);
+  border: 1px solid var(--ios-gray-200);
+  color: var(--ios-gray-600);
+  transition: var(--ios-transition);
 }
 
 @media (prefers-color-scheme: dark) {
   .record-item-number {
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--ios-gray-600);
+    border: 1px solid var(--ios-gray-200);
+    color: var(--ios-gray-100);
   }
 }
 
 .record-item-number.matched {
-  background: var(--primary);
+  background: var(--ios-blue);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--ios-blue);
   box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
   transform: scale(1.05);
 }
@@ -2581,69 +2583,84 @@ input[type="checkbox"]{
   border-radius: 8px;
   margin-top: 8px;
   font-size: 14px;
-  color: var(--text);
+  color: var(--ios-gray-600);
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: var(--ios-gray-100);
+  border: 1px solid var(--ios-gray-200);
 }
 
 @media (prefers-color-scheme: dark) {
   .record-item-type {
-    background: rgba(30, 30, 30, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--ios-gray-600);
+    border: 1px solid var(--ios-gray-200);
+    color: var(--ios-gray-100);
   }
 }
 
 /* 位置样式 */
 .record-item-zodiac.position-1 {
   font-weight: 700;
-  color: #ffffff;
-  border-color: #ff4500;
-  box-shadow: 0 0 0 1px #ff4500;
+  color: var(--ios-gray-600);
+  border-color: var(--ios-red);
+  box-shadow: 0 0 0 1px var(--ios-red);
 }
 
 .record-item-zodiac.position-2 {
   font-weight: 700;
-  color: #ffffff;
-  border-color: #ff8c00;
-  box-shadow: 0 0 0 1px #ff8c00;
+  color: var(--ios-gray-600);
+  border-color: var(--ios-yellow);
+  box-shadow: 0 0 0 1px var(--ios-yellow);
 }
 
 .record-item-zodiac.position-3 {
   font-weight: 700;
-  color: #ffffff;
-  border-color: #ffd700;
-  box-shadow: 0 0 0 1px #ffd700;
+  color: var(--ios-gray-600);
+  border-color: var(--ios-green);
+  box-shadow: 0 0 0 1px var(--ios-green);
 }
 
 .record-item-zodiac.position-4,
 .record-item-zodiac.position-5,
 .record-item-zodiac.position-6 {
   font-weight: 500;
-  color: #ffffff;
-  border-color: #555555;
-  box-shadow: 0 0 0 1px #555555;
+  color: var(--ios-gray-600);
+  border-color: var(--ios-gray-200);
+  box-shadow: 0 0 0 1px var(--ios-gray-200);
 }
 
 @media (prefers-color-scheme: dark) {
   .record-item-zodiac {
-    border-color: #555555;
+    border-color: var(--ios-gray-200);
+    color: var(--ios-gray-100);
   }
   
   .record-item-zodiac.position-4,
   .record-item-zodiac.position-5,
   .record-item-zodiac.position-6 {
-    border-color: #555555;
+    border-color: var(--ios-gray-200);
+    color: var(--ios-gray-100);
+  }
+  
+  .record-item-zodiac.position-1 {
+    color: var(--ios-gray-100);
+  }
+  
+  .record-item-zodiac.position-2 {
+    color: var(--ios-gray-100);
+  }
+  
+  .record-item-zodiac.position-3 {
+    color: var(--ios-gray-100);
   }
 }
 
 /* 匹配的位置样式 */
 .record-item-zodiac.matched {
-  background: var(--primary);
+  background: var(--ios-blue);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--ios-blue);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .record-item-actual {
@@ -2651,45 +2668,44 @@ input[type="checkbox"]{
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  color: var(--ios-gray-600);
+  background: var(--ios-gray-100);
+  border: 1px solid var(--ios-gray-200);
 }
 
 @media (prefers-color-scheme: dark) {
   .record-item-actual {
-    background: rgba(30, 30, 30, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--ios-gray-600);
+    border: 1px solid var(--ios-gray-200);
+    color: var(--ios-gray-100);
   }
 }
 
 .record-item-actual.hit {
-  color: #52c41a;
+  color: var(--ios-green);
   font-weight: 700;
-  background: rgba(82, 196, 26, 0.1);
-  border-color: #52c41a;
+  background: rgba(52, 199, 89, 0.1);
+  border-color: var(--ios-green);
 }
 
 .record-item-actual.miss {
-  color: #ff4d4f;
+  color: var(--ios-red);
   font-weight: 700;
-  background: rgba(255, 77, 79, 0.1);
-  border-color: #ff4d4f;
+  background: rgba(255, 69, 58, 0.1);
+  border-color: var(--ios-red);
 }
 
 /* 期数数据样式 */
 .record-item-periods {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--ios-gray-200);
   width: 100%;
 }
 
 @media (prefers-color-scheme: dark) {
   .record-item-periods {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--ios-gray-200);
   }
 }
 
@@ -2706,7 +2722,7 @@ input[type="checkbox"]{
 
 .period-label {
   font-size: 12px;
-  color: #888888;
+  color: var(--ios-gray-400);
   min-width: 60px;
 }
 
@@ -2722,15 +2738,16 @@ input[type="checkbox"]{
   border-radius: 14px;
   font-size: 12px;
   font-weight: 500;
-  background: #333333;
-  border: 1px solid #555555;
-  color: #ffffff;
+  background: var(--ios-gray-100);
+  border: 1px solid var(--ios-gray-200);
+  color: var(--ios-gray-600);
 }
 
 @media (prefers-color-scheme: dark) {
   .period-zodiac {
-    background: #333333;
-    border: 1px solid #555555;
+    background: var(--ios-gray-600);
+    border: 1px solid var(--ios-gray-200);
+    color: var(--ios-gray-100);
   }
 }
 
