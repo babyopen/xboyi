@@ -173,7 +173,7 @@ export const record = {
             <div class="record-item-period">
               <div class="period-label">${period}期</div>
               <div class="period-zodiacs">
-                ${zodiacs.slice(0, 6).map((zodiac) => `<span class="period-zodiac">${zodiac}</span>`).join(' ')}
+                ${zodiacs.slice(0, 6).map((zodiac) => `<span class="period-zodiac">${zodiac}</span>`).join('')}
               </div>
             </div>
           `;
