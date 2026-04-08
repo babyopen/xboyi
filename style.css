@@ -2918,10 +2918,9 @@ input[type="checkbox"]{
   }
 
   .record-item-type {
-    background: var(--ios-gray-600);
-    border: 0.3px solid transparent;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: var(--text);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .record-item-actual {
