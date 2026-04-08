@@ -106,11 +106,11 @@ export const record = {
     const displayIssue = latestRecord.issue || '';
     
     mainCard.innerHTML = `
-      <div class="record-item-header" style="cursor: pointer;" onclick="record.toggleRecords()">
+      <div class="record-item-header" style="cursor: pointer;" onclick="record.toggleZodiacRecords()">
         <div class="record-item-issue">第${displayIssue}期</div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <div class="record-item-time">${latestFormattedTime}</div>
-          <div id="recordToggleIcon" style="font-size: 12px; transition: transform 0.3s;">▼</div>
+          <div id="zodiacRecordToggleIcon" style="font-size: 12px; transition: transform 0.3s;">▼</div>
         </div>
       </div>
       <div class="record-item-content">
@@ -120,7 +120,7 @@ export const record = {
         ${latestResultHTML}
       </div>
       ${latestRecord.periodData ? record._renderPeriodData(latestRecord.periodData) : ''}
-      <div id="recordCollapseContent" class="record-collapse-content" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+      <div id="zodiacRecordCollapseContent" class="record-collapse-content" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
         <div class="record-collapse-list">
           ${records.slice(1).map(recordItem => {
             const formattedTime = record._formatDate(recordItem.createdAt);
@@ -159,11 +159,11 @@ export const record = {
   },
 
   /**
-   * 切换记录折叠状态
+   * 切换生肖记录折叠状态
    */
-  toggleRecords: () => {
-    const collapseContent = document.getElementById('recordCollapseContent');
-    const toggleIcon = document.getElementById('recordToggleIcon');
+  toggleZodiacRecords: () => {
+    const collapseContent = document.getElementById('zodiacRecordCollapseContent');
+    const toggleIcon = document.getElementById('zodiacRecordToggleIcon');
     if (collapseContent && toggleIcon) {
       if (collapseContent.style.display === 'none') {
         collapseContent.style.display = 'block';
