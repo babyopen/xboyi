@@ -449,6 +449,7 @@ p, .text-md {
   margin:0 auto;
   max-width:1000px;
   width:100%;
+  border: 1px solid var(--border);
 }
 
 .top-title{
@@ -456,17 +457,22 @@ p, .text-md {
   color:var(--sub-text);
   display:flex;
   justify-content:space-between;
-  margin-bottom:8px;
+  margin-bottom:12px;
 }
+
 .top-nums{
   display:flex;
   flex-wrap:wrap;
-  gap:6px;
+  gap:8px;
   justify-content:center;
   max-height:160px;
   overflow-y:auto;
   overflow-x:hidden;
   padding-right:4px;
+  border-radius:var(--radius-md);
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border-light);
 }
 .top-nums::-webkit-scrollbar{width:4px}
 .top-nums::-webkit-scrollbar-thumb{background:var(--sub-text);border-radius:2px;opacity:0.3}
@@ -1057,9 +1063,17 @@ p, .text-md {
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:2px;
+  gap:4px;
   flex-shrink:0;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  transition: all var(--anim-fast);
 }
+
+.num-item:hover{
+  background: rgba(0, 122, 255, 0.05);
+}
+
 .num-ball{
   width:var(--ball-size);
   height:var(--ball-size);
@@ -1071,6 +1085,13 @@ p, .text-md {
   font-weight:500;
   -webkit-user-select:text;
   user-select:text;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all var(--anim-fast);
+}
+
+.num-ball:hover{
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 .红色{background:var(--danger)}
 .蓝色{background:var(--blue)}
