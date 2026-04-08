@@ -2242,10 +2242,11 @@ input[type="checkbox"]{
   background: #1a1a1a;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  padding: 16px;
+  padding: 12px;
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  margin-bottom: 12px;
 }
 
 /* 深色模式下的玻璃质感 */
@@ -2266,8 +2267,8 @@ input[type="checkbox"]{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -2291,13 +2292,13 @@ input[type="checkbox"]{
 .record-item-content {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .record-item-zodiacs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   flex: 1;
   min-width: 0;
@@ -2305,9 +2306,9 @@ input[type="checkbox"]{
 
 /* 玻璃胶囊标签 */
 .record-item-zodiac {
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
   font-weight: 500;
   background: #333333;
   border: 1px solid #555555;
@@ -2473,8 +2474,8 @@ input[type="checkbox"]{
 
 /* 期数数据样式 */
 .record-item-periods {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   width: 100%;
 }
@@ -2488,8 +2489,8 @@ input[type="checkbox"]{
 .record-item-period {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
-  gap: 8px;
+  margin-bottom: 6px;
+  gap: 6px;
 }
 
 .record-item-period:last-child {
@@ -2497,22 +2498,22 @@ input[type="checkbox"]{
 }
 
 .period-label {
-  font-size: 13px;
+  font-size: 12px;
   color: #888888;
-  min-width: 70px;
+  min-width: 60px;
 }
 
 .period-zodiacs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   flex: 1;
 }
 
 .period-zodiac {
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 12px;
   font-weight: 500;
   background: #333333;
   border: 1px solid #555555;
