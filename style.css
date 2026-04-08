@@ -2822,6 +2822,32 @@ input[type="checkbox"]{
   font-weight: 600;
 }
 
+/* 折叠内容样式 */
+.record-collapse-content {
+  transition: all 0.3s ease;
+}
+
+.record-collapse-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.record-collapse-item {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--ios-corner-radius);
+  border: 1px solid var(--border);
+  transition: var(--ios-transition);
+}
+
+@media (prefers-color-scheme: dark) {
+  .record-collapse-item {
+    background: rgba(40, 40, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .record-container {
