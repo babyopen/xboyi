@@ -533,7 +533,6 @@ export const dataFetch = {
   getMockHistoryData: () => {
     const mockData = [];
     const zodiacs = CONFIG.ANALYSIS.ZODIAC_ALL;
-    const colors = ['红', '蓝', '绿'];
     
     for(let i = 1; i <= 50; i++) {
       const te = Math.floor(Math.random() * 49) + 1;

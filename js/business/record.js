@@ -82,45 +82,97 @@ export const record = {
       return;
     }
 
+    // 按创建时间排序，最新的在最上面
+    records.sort((a, b) => b.createdAt - a.createdAt);
+
     // 使用文档片段批量更新DOM，减少重排
     const fragment = document.createDocumentFragment();
     
-    records.forEach(recordItem => {
-      const formattedTime = record._formatDate(recordItem.createdAt);
-
-      let resultHTML = '';
-      if (recordItem.checked) {
-        const hitClass = recordItem.matched ? 'hit' : 'miss';
-        // 实际开奖只显示特别号
-        const actualResult = recordItem.actualZodiac || '-';
-        resultHTML = `<div class="record-item-actual ${hitClass}">${actualResult}</div>`;
-      }
-
-      // 直接显示保存的期号，与预测标题保持一致
-      const displayIssue = recordItem.issue || '';
-
-      const recordElement = document.createElement('div');
-      recordElement.className = `record-item ${recordItem.checked && !recordItem.matched ? 'mismatch' : ''}`;
-      recordElement.innerHTML = `
-        <div class="record-item-header">
-          <div class="record-item-issue">第${displayIssue}期</div>
-          <div class="record-item-time">${formattedTime}</div>
+    // 创建主卡片容器
+    const mainCard = document.createElement('div');
+    mainCard.className = 'record-item';
+    
+    // 渲染最新一期（始终显示）
+    const latestRecord = records[0];
+    const latestFormattedTime = record._formatDate(latestRecord.createdAt);
+    
+    let latestResultHTML = '';
+    if (latestRecord.checked) {
+      const hitClass = latestRecord.matched ? 'hit' : 'miss';
+      const actualResult = latestRecord.actualZodiac || '-';
+      latestResultHTML = `<div class="record-item-actual ${hitClass}">${actualResult}</div>`;
+    }
+    
+    const displayIssue = latestRecord.issue || '';
+    
+    mainCard.innerHTML = `
+      <div class="record-item-header" style="cursor: pointer;" onclick="record.toggleZodiacRecords()">
+        <div class="record-item-issue">第${displayIssue}期</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="record-item-time">${latestFormattedTime}</div>
+          <div id="zodiacRecordToggleIcon" style="font-size: 12px; transition: transform 0.3s;">▼</div>
         </div>
-        <div class="record-item-content">
-          <div class="record-item-zodiacs">
-            ${record._renderZodiacItems(recordItem)}
-          </div>
-          ${resultHTML}
+      </div>
+      <div class="record-item-content">
+        <div class="record-item-zodiacs">
+          ${record._renderZodiacItems(latestRecord)}
         </div>
-        ${recordItem.periodData ? record._renderPeriodData(recordItem.periodData) : ''}
-      `;
-      
-      fragment.appendChild(recordElement);
-    });
+        ${latestResultHTML}
+      </div>
+      ${latestRecord.periodData ? record._renderPeriodData(latestRecord.periodData) : ''}
+      <div id="zodiacRecordCollapseContent" class="record-collapse-content" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+        <div class="record-collapse-list">
+          ${records.slice(1).map(recordItem => {
+            const formattedTime = record._formatDate(recordItem.createdAt);
+            let resultHTML = '';
+            if (recordItem.checked) {
+              const hitClass = recordItem.matched ? 'hit' : 'miss';
+              const actualResult = recordItem.actualZodiac || '-';
+              resultHTML = `<div class="record-item-actual ${hitClass}">${actualResult}</div>`;
+            }
+            const itemDisplayIssue = recordItem.issue || '';
+            return `
+              <div class="record-collapse-item">
+                <div class="record-item-header">
+                  <div class="record-item-issue">第${itemDisplayIssue}期</div>
+                  <div class="record-item-time">${formattedTime}</div>
+                </div>
+                <div class="record-item-content">
+                  <div class="record-item-zodiacs">
+                    ${record._renderZodiacItems(recordItem)}
+                  </div>
+                  ${resultHTML}
+                </div>
+                ${recordItem.periodData ? record._renderPeriodData(recordItem.periodData) : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+    
+    fragment.appendChild(mainCard);
 
     // 一次性更新DOM
     recordList.innerHTML = '';
     recordList.appendChild(fragment);
+  },
+
+  /**
+   * 切换生肖记录折叠状态
+   */
+  toggleZodiacRecords: () => {
+    const collapseContent = document.getElementById('zodiacRecordCollapseContent');
+    const toggleIcon = document.getElementById('zodiacRecordToggleIcon');
+    if (collapseContent && toggleIcon) {
+      if (collapseContent.style.display === 'none') {
+        collapseContent.style.display = 'block';
+        toggleIcon.style.transform = 'rotate(180deg)';
+      } else {
+        collapseContent.style.display = 'none';
+        toggleIcon.style.transform = 'rotate(0deg)';
+      }
+    }
   },
 
   /**
@@ -262,44 +314,97 @@ export const record = {
       return;
     }
 
+    // 按创建时间排序，最新的在最上面
+    records.sort((a, b) => b.createdAt - a.createdAt);
+
     // 使用文档片段批量更新DOM，减少重排
     const fragment = document.createDocumentFragment();
     
-    records.forEach(recordItem => {
-      const formattedTime = record._formatDate(recordItem.createdAt);
-
-      let resultHTML = '';
-      if (recordItem.checked) {
-        const hitClass = recordItem.matched ? 'hit' : 'miss';
-        const lastNumber = recordItem.actualNumbers && recordItem.actualNumbers.length > 0 ? recordItem.actualNumbers[recordItem.actualNumbers.length - 1] : '-';
-        resultHTML = `<div class="record-item-actual ${hitClass}">${lastNumber}</div>`;
-      }
-
-      // 直接显示保存的期号，与预测标题保持一致
-      const displayIssue = recordItem.issue || '';
-      
-      const recordElement = document.createElement('div');
-      recordElement.className = `record-item ${recordItem.checked && !recordItem.matched ? 'mismatch' : ''}`;
-      recordElement.innerHTML = `
-        <div class="record-item-header">
-          <div class="record-item-issue">第${displayIssue}期</div>
-          <div class="record-item-time">${formattedTime}</div>
+    // 创建主卡片容器
+    const mainCard = document.createElement('div');
+    mainCard.className = 'record-item';
+    
+    // 渲染最新一期（始终显示）
+    const latestRecord = records[0];
+    const latestFormattedTime = record._formatDate(latestRecord.createdAt);
+    
+    let latestResultHTML = '';
+    if (latestRecord.checked) {
+      const hitClass = latestRecord.matched ? 'hit' : 'miss';
+      const lastNumber = latestRecord.actualNumbers && latestRecord.actualNumbers.length > 0 ? latestRecord.actualNumbers[latestRecord.actualNumbers.length - 1] : '-';
+      latestResultHTML = `<div class="record-item-actual ${hitClass}">${lastNumber}</div>`;
+    }
+    
+    const displayIssue = latestRecord.issue || '';
+    
+    mainCard.innerHTML = `
+      <div class="record-item-header" style="cursor: pointer;" onclick="record.toggleNumberRecords()">
+        <div class="record-item-issue">第${displayIssue}期</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="record-item-time">${latestFormattedTime}</div>
+          <div id="numberRecordToggleIcon" style="font-size: 12px; transition: transform 0.3s;">▼</div>
         </div>
-        <div class="record-item-content">
-          <div class="record-item-numbers">
-            ${record._renderNumberItems(recordItem)}
-          </div>
-          ${resultHTML}
+      </div>
+      <div class="record-item-content">
+        <div class="record-item-numbers">
+          ${record._renderNumberItems(latestRecord)}
         </div>
-        ${recordItem.type ? `<div class="record-item-type">类型: ${recordItem.type === 'hot' ? '热号' : '冷号'}</div>` : ''}
-      `;
-      
-      fragment.appendChild(recordElement);
-    });
+        ${latestResultHTML}
+      </div>
+      ${latestRecord.type ? `<div class="record-item-type">类型: ${latestRecord.type === 'hot' ? '热号' : '冷号'}</div>` : ''}
+      <div id="numberRecordCollapseContent" class="record-collapse-content" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+        <div class="record-collapse-list">
+          ${records.slice(1).map(recordItem => {
+            const formattedTime = record._formatDate(recordItem.createdAt);
+            let resultHTML = '';
+            if (recordItem.checked) {
+              const hitClass = recordItem.matched ? 'hit' : 'miss';
+              const lastNumber = recordItem.actualNumbers && recordItem.actualNumbers.length > 0 ? recordItem.actualNumbers[recordItem.actualNumbers.length - 1] : '-';
+              resultHTML = `<div class="record-item-actual ${hitClass}">${lastNumber}</div>`;
+            }
+            const itemDisplayIssue = recordItem.issue || '';
+            return `
+              <div class="record-collapse-item">
+                <div class="record-item-header">
+                  <div class="record-item-issue">第${itemDisplayIssue}期</div>
+                  <div class="record-item-time">${formattedTime}</div>
+                </div>
+                <div class="record-item-content">
+                  <div class="record-item-numbers">
+                    ${record._renderNumberItems(recordItem)}
+                  </div>
+                  ${resultHTML}
+                </div>
+                ${recordItem.type ? `<div class="record-item-type">类型: ${recordItem.type === 'hot' ? '热号' : '冷号'}</div>` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+    
+    fragment.appendChild(mainCard);
 
     // 一次性更新DOM
     recordList.innerHTML = '';
     recordList.appendChild(fragment);
+  },
+
+  /**
+   * 切换号码记录折叠状态
+   */
+  toggleNumberRecords: () => {
+    const collapseContent = document.getElementById('numberRecordCollapseContent');
+    const toggleIcon = document.getElementById('numberRecordToggleIcon');
+    if (collapseContent && toggleIcon) {
+      if (collapseContent.style.display === 'none') {
+        collapseContent.style.display = 'block';
+        toggleIcon.style.transform = 'rotate(180deg)';
+      } else {
+        collapseContent.style.display = 'none';
+        toggleIcon.style.transform = 'rotate(0deg)';
+      }
+    }
   },
 
   /**

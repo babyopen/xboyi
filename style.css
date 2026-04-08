@@ -2496,19 +2496,28 @@ input[type="checkbox"]{
 }
 
 .record-item-zodiacs {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: clamp(4px, 1.5vw, 8px);
   width: 100%;
   box-sizing: border-box;
+  overflow-x: auto;
+  padding: 4px 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.record-item-zodiacs::-webkit-scrollbar {
+  display: none;
 }
 
 /* 玻璃胶囊标签 */
 .record-item-zodiac {
   min-height: 42px;
-  padding: 8px 6px;
+  min-width: clamp(50px, 12vw, 80px);
+  padding: 8px clamp(6px, 1.5vw, 12px);
   border-radius: 16px;
-  font-size: 13px;
+  font-size: clamp(11px, 3vw, 13px);
   font-weight: 500;
   background: var(--ios-gray-100);
   border: 0.3px solid transparent;
@@ -2519,6 +2528,8 @@ input[type="checkbox"]{
   align-items: center;
   justify-content: center;
   text-align: center;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* 选中态系统蓝 */
@@ -2648,18 +2659,27 @@ input[type="checkbox"]{
 }
 
 .period-zodiacs {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: clamp(4px, 1.5vw, 8px);
   width: 100%;
   box-sizing: border-box;
+  overflow-x: auto;
+  padding: 4px 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.period-zodiacs::-webkit-scrollbar {
+  display: none;
 }
 
 .period-zodiac {
   min-height: 38px;
-  padding: 6px;
+  min-width: clamp(45px, 10vw, 70px);
+  padding: 6px clamp(6px, 1.2vw, 10px);
   border-radius: 14px;
-  font-size: 12px;
+  font-size: clamp(10px, 2.8vw, 12px);
   font-weight: 500;
   background: var(--ios-gray-100);
   border: 0.3px solid transparent;
@@ -2669,6 +2689,8 @@ input[type="checkbox"]{
   align-items: center;
   justify-content: center;
   text-align: center;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* iOS弹窗遮罩 */ 
@@ -2800,6 +2822,32 @@ input[type="checkbox"]{
   font-weight: 600;
 }
 
+/* 折叠内容样式 */
+.record-collapse-content {
+  transition: all 0.3s ease;
+}
+
+.record-collapse-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.record-collapse-item {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--ios-corner-radius);
+  border: 1px solid var(--border);
+  transition: var(--ios-transition);
+}
+
+@media (prefers-color-scheme: dark) {
+  .record-collapse-item {
+    background: rgba(40, 40, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .record-container {
@@ -2896,10 +2944,9 @@ input[type="checkbox"]{
   }
 
   .record-item-type {
-    background: var(--ios-gray-600);
-    border: 0.3px solid transparent;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: var(--text);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .record-item-actual {
