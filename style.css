@@ -215,6 +215,62 @@
  .ios-card:active { 
    box-shadow: var(--ios-shadow-xs); 
    transform: translateY(0.5px); 
+ } 
+
+/* iOS原生按钮 - 系统样式 */ 
+ .ios-btn { 
+   display: inline-flex; 
+   align-items: center; 
+   justify-content: center; 
+   min-height: 44px; /* iOS最小可点击区域 */ 
+   padding: 0 16px; 
+   border-radius: var(--ios-corner-radius); 
+   font-size: 17px; /* iOS原生按钮字号 */ 
+   font-weight: 600; 
+   cursor: pointer; 
+   transition: var(--ios-transition); 
+   border: none; 
+   outline: none; 
+   touch-action: manipulation; 
+   -webkit-user-select: none; 
+   user-select: none; 
+ } 
+ 
+ /* iOS主要按钮（蓝色） */ 
+ .ios-btn-primary { 
+   background: var(--ios-blue); 
+   color: #FFFFFF; 
+ } 
+ 
+ /* iOS次要按钮（浅灰） */ 
+ .ios-btn-secondary { 
+   background: var(--ios-gray-200); 
+   color: var(--ios-blue); 
+ } 
+ 
+ /* iOS禁用按钮 */ 
+ .ios-btn:disabled { 
+   opacity: 0.5; 
+   cursor: not-allowed; 
+   transform: none !important; 
+ } 
+ 
+ /* iOS按钮点击反馈（仿原生按压） */ 
+ .ios-btn:active:not(:disabled) { 
+   background-color: rgba(0, 122, 255, 0.9); 
+   transform: scale(0.98); 
+ } 
+ 
+ .ios-btn-secondary:active:not(:disabled) { 
+   background-color: var(--ios-gray-300); 
+ } 
+ 
+ /* iOS迷你按钮（适配小控件） */ 
+ .ios-btn-mini { 
+   min-height: 32px; 
+   padding: 0 12px; 
+   font-size: 14px; 
+   border-radius: 12px; 
  }
 
 /* 统一动画过渡效果 */
