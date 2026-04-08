@@ -138,8 +138,10 @@ async function initApp() {
   }
 }
 
-// 为了兼容原 HTML 中的内联 onclick，将 Business 挂载到 window
+// 为了兼容原 HTML 中的内联 onclick，将 Business 和 record 都挂载到 window
 window.Business = Business;
+// 确保 record 模块也能在全局访问
+window.record = Business.record;
 
 // 添加缺失的方法作为临时解决方案
 if (!Business.switchBottomNav) {
