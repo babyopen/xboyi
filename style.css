@@ -2393,20 +2393,20 @@ input[type="checkbox"]{
 /* 位置样式 */
 .record-item-zodiac.position-1 {
   font-weight: 700;
-  color: #ff4500;
-  border-color: #ff4500;
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .record-item-zodiac.position-2 {
   font-weight: 700;
-  color: #ff8c00;
-  border-color: #ff8c00;
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .record-item-zodiac.position-3 {
   font-weight: 700;
-  color: #ffd700;
-  border-color: #ffd700;
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .record-item-zodiac.position-4,
@@ -2414,34 +2414,26 @@ input[type="checkbox"]{
 .record-item-zodiac.position-6 {
   font-weight: 500;
   color: var(--text);
-  border-color: rgba(0, 0, 0, 0.1);
+  border-color: var(--border);
 }
 
 @media (prefers-color-scheme: dark) {
+  .record-item-zodiac {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
   .record-item-zodiac.position-4,
   .record-item-zodiac.position-5,
   .record-item-zodiac.position-6 {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
   }
 }
 
 /* 匹配的位置样式 */
-.record-item-zodiac.position-1.matched {
-  background: #ff4500;
+.record-item-zodiac.matched {
+  background: var(--primary);
   color: #fff;
-  border-color: #ff4500;
-}
-
-.record-item-zodiac.position-2.matched {
-  background: #ff8c00;
-  color: #fff;
-  border-color: #ff8c00;
-}
-
-.record-item-zodiac.position-3.matched {
-  background: #ffd700;
-  color: #000;
-  border-color: #ffd700;
+  border-color: var(--primary);
 }
 
 .record-item-actual {
