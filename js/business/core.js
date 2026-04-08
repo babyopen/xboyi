@@ -702,13 +702,35 @@ export const core = {
     // 控制快捷导航按钮的显示/隐藏：在筛选页面(index=0)和分析页面(index=1)显示
     const quickNavBtn = document.getElementById('quickNavBtn');
     const quickNavMenu = document.getElementById('quickNavMenu');
+    const navTabs = document.getElementById('navTabs');
     const bottomNav = document.querySelector('.bottom-nav');
+    
     if(quickNavBtn) {
       quickNavBtn.style.display = (index === 0 || index === 1) ? 'flex' : 'none';
     }
+    
     if(quickNavMenu) {
       quickNavMenu.classList.remove('show');
+      
+      // 保存原始的快捷导航内容
+      if (!Business._originalQuickNavContent) {
+        Business._originalQuickNavContent = navTabs.innerHTML;
+      }
+      
+      // 根据当前页面更新快捷导航内容
+      if (index === 1 && navTabs) {
+        // 分析页面的快捷导航内容
+        navTabs.innerHTML = `
+          <button class="nav-tab" data-target="zodiacAnalysisPanel" role="tab">生肖关联</button>
+          <button class="nav-tab" data-target="analysisPanelContent" role="tab">维度分析</button>
+          <button class="nav-tab" data-target="historyPanel" role="tab">历史记录</button>
+        `;
+      } else if (index === 0 && navTabs && Business._originalQuickNavContent) {
+        // 恢复筛选页面的快捷导航内容
+        navTabs.innerHTML = Business._originalQuickNavContent;
+      }
     }
+    
     if(bottomNav) {
       bottomNav.classList.toggle('needs-space', index === 0 || index === 1);
     }
@@ -762,7 +784,23 @@ export const core = {
   scrollToModule: (targetId) => {
     const element = document.getElementById(targetId);
     if(element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      // 计算目标元素的位置
+      const rect = element.getBoundingClientRect();
+      const offsetTop = rect.top + window.pageYOffset;
+      
+      // 计算顶部占用空间（包括top-box和安全区）
+      const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-top') || '0');
+      const topBox = document.getElementById('topBox');
+      const topBoxHeight = topBox ? topBox.offsetHeight : 0;
+      
+      // 计算最终滚动位置
+      const scrollToPosition = offsetTop - safeTop - topBoxHeight - 20; // 20px 额外空间
+      
+      // 使用window.scrollTo代替element.scrollIntoView，以获得更好的控制
+      window.scrollTo({
+        top: Math.max(0, scrollToPosition),
+        behavior: 'smooth'
+      });
     }
   },
 

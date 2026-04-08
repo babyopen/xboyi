@@ -116,11 +116,37 @@ export const EventBinder = {
       return;
     }
 
-    // 3. 快捷导航跳转
+    // 3. 快捷导航模块跳转
     const navTab = target.closest('.nav-tab[data-target]');
     if(navTab){
       const targetId = navTab.dataset.target;
-      Business.scrollToModule(targetId);
+      
+      // 检查是否是分析页面的快捷导航
+      if (targetId === 'zodiacAnalysisPanel' || targetId === 'analysisPanelContent' || targetId === 'historyPanel') {
+        // 映射目标ID到分析标签
+        const tabMap = {
+          'zodiacAnalysisPanel': 'zodiac',
+          'analysisPanelContent': 'analysis',
+          'historyPanel': 'history'
+        };
+        
+        const tab = tabMap[targetId];
+        if (tab) {
+          Business.switchAnalysisTab(tab);
+        }
+      } else {
+        // 其他页面的快捷导航 - 滚动到模块
+        console.log('滚动到模块:', targetId);
+        const element = document.getElementById(targetId);
+        console.log('目标元素是否存在:', !!element);
+        if (element) {
+          console.log('目标元素位置:', element.getBoundingClientRect());
+          Business.scrollToModule(targetId);
+        }
+      }
+      
+      // 点击后关闭快捷导航菜单
+      Business.toggleQuickNav(false);
       return;
     }
 
@@ -194,6 +220,7 @@ export const EventBinder = {
       if(action === 'copyHotNumbers') Business.copyHotNumbers();
       if(action === 'copyZodiacNumbers') Business.copyZodiacNumbers();
       if(action === 'favoriteZodiacNumbers') Business.favoriteZodiacNumbers();
+      if(action === 'saveNumberRecord') Business.saveNumberRecord();
       if(action === 'refreshHotCold') Business.refreshHotCold();
       // 显示连出详情
       if(action === 'showStreakDetail') Business.showStreakDetail(actionBtn.dataset.streakType);

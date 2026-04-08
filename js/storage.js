@@ -21,7 +21,8 @@ export const Storage = {
     DATA_VERSION: 'dataVersion',
     HISTORY_CACHE: 'historyCache',
     HISTORY_CACHE_TIME: 'historyCacheTime',
-    ZODIAC_RECORDS: 'zodiacRecords'
+    ZODIAC_RECORDS: 'zodiacRecords',
+    NUMBER_RECORDS: 'numberRecords'
   }),
 
   /**
@@ -355,6 +356,121 @@ export const Storage = {
       return Storage.remove(Storage.KEYS.ZODIAC_RECORDS);
     } catch (e) {
       console.error('清除生肖记录失败:', e);
+      return false;
+    }
+  },
+
+  /**
+   * 保存号码记录
+   * @param {Object} recordData - 号码记录对象
+   * @returns {boolean} 是否成功
+   */
+  saveNumberRecord: (recordData) => {
+    try {
+      if (!recordData || !recordData.issue || !recordData.numbers) {
+        console.error('保存号码记录失败：数据不完整');
+        return false;
+      }
+
+      const records = Storage.get(Storage.KEYS.NUMBER_RECORDS, []);
+      const existingIndex = records.findIndex(r => r.issue === recordData.issue);
+      
+      if (existingIndex >= 0) {
+        // 更新现有记录
+        records[existingIndex] = {
+          ...records[existingIndex],
+          ...recordData,
+          updatedAt: Date.now()
+        };
+      } else {
+        // 添加新记录
+        records.unshift({
+          ...recordData,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          checked: false,
+          matched: null
+        });
+      }
+      
+      // 只保留最近50条记录
+      if (records.length > 50) {
+        records.splice(50);
+      }
+      
+      return Storage.set(Storage.KEYS.NUMBER_RECORDS, records);
+    } catch (e) {
+      console.error('保存号码记录失败:', e);
+      return false;
+    }
+  },
+
+  /**
+   * 加载号码记录
+   * @returns {Array} 号码记录列表
+   */
+  loadNumberRecords: () => {
+    try {
+      const records = Storage.get(Storage.KEYS.NUMBER_RECORDS, []);
+      return Array.isArray(records) ? records : [];
+    } catch (e) {
+      console.error('加载号码记录失败:', e);
+      return [];
+    }
+  },
+
+  /**
+   * 核对号码记录
+   * @param {string} issue - 期号
+   * @param {Array} actualNumbers - 实际开奖号码
+   * @returns {Object} 核对结果
+   */
+  checkNumberRecord: (issue, actualNumbers) => {
+    try {
+      if (!issue || !actualNumbers || !Array.isArray(actualNumbers)) {
+        return { success: false, message: '参数不完整' };
+      }
+
+      const records = Storage.get(Storage.KEYS.NUMBER_RECORDS, []);
+      const recordIndex = records.findIndex(r => r.issue === issue);
+      
+      if (recordIndex >= 0) {
+        const record = records[recordIndex];
+        if (!record.numbers || !Array.isArray(record.numbers)) {
+          return { success: false, message: '记录数据格式错误' };
+        }
+        
+        const matched = actualNumbers.some(num => record.numbers.includes(num));
+        
+        // 更新记录
+        records[recordIndex] = {
+          ...record,
+          checked: true,
+          matched: matched,
+          actualNumbers: actualNumbers,
+          checkedAt: Date.now()
+        };
+        
+        Storage.set(Storage.KEYS.NUMBER_RECORDS, records);
+        return { success: true, matched: matched, record: records[recordIndex] };
+      }
+      
+      return { success: false, message: '未找到对应期号的记录' };
+    } catch (e) {
+      console.error('核对号码记录失败:', e);
+      return { success: false, message: '核对失败' };
+    }
+  },
+
+  /**
+   * 清除所有号码记录
+   * @returns {boolean} 是否成功
+   */
+  clearNumberRecords: () => {
+    try {
+      return Storage.remove(Storage.KEYS.NUMBER_RECORDS);
+    } catch (e) {
+      console.error('清除号码记录失败:', e);
       return false;
     }
   }

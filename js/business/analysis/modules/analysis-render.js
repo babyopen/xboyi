@@ -356,7 +356,7 @@ export const analysisRender = {
               }).join('');
               
               selectedHtml += `
-                <div class="selected-zodiac-item" data-zodiac="${zod}" onclick="import('../../../prediction.js').then(({ prediction }) => prediction.showSelectedZodiacRatingDetail('${zod}'))">
+                <div class="selected-zodiac-item" data-zodiac="${zod}">
                   <div class="zodiac-periods">
                     ${periodTags}
                   </div>
@@ -365,6 +365,15 @@ export const analysisRender = {
               `;
             });
             selectedZodiacsGrid.innerHTML = selectedHtml;
+            
+            // 使用事件委托处理点击事件
+            selectedZodiacsGrid.onclick = (e) => {
+              const item = e.target.closest('.selected-zodiac-item');
+              if (item) {
+                const zodiac = item.dataset.zodiac;
+                prediction.showSelectedZodiacRatingDetail(zodiac);
+              }
+            };
             
             // 保存精选生肖到记录页面
             prediction.saveSelectedZodiacsToRecord();

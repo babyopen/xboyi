@@ -252,6 +252,8 @@ export const dataFetch = {
         prediction.updateSpecialHistoryComparison();
         // 重新渲染精选特码历史以显示最新比较结果
         prediction.renderSpecialHistory();
+        // 自动保存精选生肖到记录页面
+        prediction.saveSelectedZodiacsToRecord();
       });
       
       if(!silent) Toast.show('数据加载成功');
@@ -276,9 +278,17 @@ export const dataFetch = {
       const s = analysis.getSpecial(latestItem);
       const resultZodiac = s.zod;
       
+      // 提取实际开奖号码
+      const openCode = latestItem.openCode || '';
+      const actualNumbers = openCode.split(',').map(num => num.trim()).filter(num => num);
+      
       // 自动核对生肖记录
       import('../../record.js').then(({ record }) => {
         record.checkZodiacRecord(issue, resultZodiac);
+        // 自动核对号码记录
+        if (actualNumbers.length > 0) {
+          record.checkNumberRecord(issue, actualNumbers);
+        }
       });
     }
   },
