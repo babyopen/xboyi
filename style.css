@@ -2529,56 +2529,98 @@ input[type="checkbox"]{
   }
 }
 
-/* 响应式设计 - 小屏幕设备 */
-@media (max-width: 480px) {
-  .record-item {
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-  
-  .record-item-zodiacs {
-    gap: 6px;
-  }
-  
-  .record-item-zodiac {
-    padding: 6px 12px;
-    font-size: 13px;
-    border-radius: 16px;
-  }
-  
-  .record-item-period {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  
-  .period-label {
-    min-width: auto;
-    font-size: 12px;
-  }
-  
-  .period-zodiacs {
-    gap: 6px;
-  }
-  
-  .period-zodiac {
-    padding: 4px 10px;
-    font-size: 12px;
-    border-radius: 14px;
-  }
-  
-  .record-item-content {
-    gap: 12px;
-  }
-  
-  .record-item-issue {
-    font-size: 14px;
-  }
-  
-  .record-item-time {
-    font-size: 12px;
-  }
-}
+/* iOS弹窗样式 */
+/* iOS弹窗遮罩 */ 
+ .ios-modal-overlay { 
+   position: fixed; 
+   top: 0; 
+   left: 0; 
+   right: 0; 
+   bottom: 0; 
+   background: rgba(0, 0, 0, 0.5); 
+   z-index: 9999; 
+   display: flex; 
+   align-items: center; 
+   justify-content: center; 
+   padding: 20px; 
+ } 
+ 
+ /* iOS弹窗容器 */ 
+ .ios-modal { 
+   width: 100%; 
+   max-width: 280px; 
+   background: #FFFFFF; 
+   border-radius: 13px; 
+   overflow: hidden; 
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+   animation: ios-modal-in 0.3s cubic-bezier(0.35, 0, 0.25, 1); 
+ } 
+ 
+ @media (prefers-color-scheme: dark) { 
+   .ios-modal { 
+     background: #2C2C2E; 
+   } 
+ } 
+ 
+ /* iOS弹窗标题 */ 
+ .ios-modal-title { 
+   padding: 16px 20px; 
+   font-size: 17px; 
+   font-weight: 600; 
+   text-align: center; 
+   border-bottom: 1px solid #E5E5EA; 
+ } 
+ 
+ /* iOS弹窗内容 */ 
+ .ios-modal-content { 
+   padding: 20px; 
+   font-size: 13px; 
+   color: #8E8E93; 
+   text-align: center; 
+ } 
+ 
+ /* iOS弹窗按钮组 */ 
+ .ios-modal-buttons { 
+   display: flex; 
+   border-top: 1px solid #E5E5EA; 
+ } 
+ 
+ /* iOS弹窗按钮 */ 
+ .ios-modal-button { 
+   flex: 1; 
+   height: 44px; 
+   line-height: 44px; 
+   text-align: center; 
+   font-size: 17px; 
+   font-weight: 600; 
+   cursor: pointer; 
+   transition: all 0.3s ease; 
+ } 
+ 
+ .ios-modal-button.cancel { 
+   color: #007AFF; 
+   border-right: 1px solid #E5E5EA; 
+ } 
+ 
+ .ios-modal-button.confirm { 
+   color: #007AFF; 
+ } 
+ 
+ .ios-modal-button:active { 
+   background-color: rgba(0, 122, 255, 0.1); 
+ } 
+ 
+ /* 弹窗入场动画 */ 
+ @keyframes ios-modal-in { 
+   from { 
+     opacity: 0; 
+     transform: scale(0.9) translateY(20px); 
+   } 
+   to { 
+     opacity: 1; 
+     transform: scale(1) translateY(0); 
+   } 
+ }
 
 /* 结果样式 */
 .record-item-result {
@@ -4574,12 +4616,61 @@ button::after,
 .analysis-filter-btn,
 .analysis-filter-btn::before,
 .analysis-filter-btn::after,
-.analysis-tab-btn,
-.analysis-tab-btn::before,
-.analysis-tab-btn::after {
+.analysis-tab-btn, .analysis-tab-btn::before, .analysis-tab-btn::after {
   transition: none !important;
   -webkit-transition: none !important;
   -moz-transition: none !important;
   -ms-transition: none !important;
   -o-transition: none !important;
+}
+
+/* 响应式设计 - 小屏幕设备 */
+@media (max-width: 480px) {
+  .record-item {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .record-item-zodiacs {
+    gap: 6px;
+  }
+  
+  .record-item-zodiac {
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 16px;
+  }
+  
+  .record-item-period {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .period-label {
+    min-width: auto;
+    font-size: 12px;
+  }
+  
+  .period-zodiacs {
+    gap: 6px;
+  }
+  
+  .period-zodiac {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 14px;
+  }
+  
+  .record-item-content {
+    gap: 12px;
+  }
+  
+  .record-item-issue {
+    font-size: 14px;
+  }
+  
+  .record-item-time {
+    font-size: 12px;
+  }
 }
