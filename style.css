@@ -52,8 +52,8 @@
   --anim-normal:0.3s;
   --anim-slow:0.5s;
   /* 布局常量 */
-  --top-card-height:210px;
-  --top-offset:260px;
+  --top-card-height:180px;
+  --top-offset:230px;
   --preview-max-count:8;
   /* 间距变量 */
   --spacing-xs:4px;
