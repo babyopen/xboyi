@@ -443,12 +443,13 @@ p, .text-md {
 .top-card{
   background:var(--card);
   border-radius:var(--radius-lg);
-  padding:16px;
+  padding:12px;
   box-shadow:var(--shadow);
   height:var(--top-card-height);
   margin:0 auto;
-  max-width:1200px;
+  max-width:1000px;
   width:100%;
+  box-sizing:border-box;
 }
 
 .top-title{
@@ -467,8 +468,6 @@ p, .text-md {
   overflow-y:auto;
   overflow-x:hidden;
   padding-right:4px;
-  max-width:800px;
-  margin:0 auto;
 }
 .top-nums::-webkit-scrollbar{width:4px}
 .top-nums::-webkit-scrollbar-thumb{background:var(--sub-text);border-radius:2px;opacity:0.3}
