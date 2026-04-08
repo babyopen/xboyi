@@ -2239,21 +2239,19 @@ input[type="checkbox"]{
 
 /* 液态玻璃卡片 */
 .record-item {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 16px;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
 }
 
 /* 深色模式下的玻璃质感 */
 @media (prefers-color-scheme: dark) {
   .record-item {
-    background: rgba(30, 30, 30, 0.7);
+    background: #1a1a1a;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
@@ -2269,8 +2267,8 @@ input[type="checkbox"]{
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -2282,19 +2280,19 @@ input[type="checkbox"]{
 .record-item-issue {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text);
+  color: #ffffff;
 }
 
 .record-item-time {
   font-size: 13px;
-  color: var(--sub-text);
+  color: #888888;
 }
 
 .record-item-content {
   display: flex;
-  align-items: flex-start;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .record-item-zodiacs {
@@ -2311,12 +2309,10 @@ input[type="checkbox"]{
   border-radius: 20px;
   font-size: 14px;
   font-weight: 500;
-  background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  color: var(--text);
+  background: #333333;
+  border: 1px solid #555555;
+  color: #ffffff;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -2395,39 +2391,43 @@ input[type="checkbox"]{
 /* 位置样式 */
 .record-item-zodiac.position-1 {
   font-weight: 700;
-  color: var(--text);
-  border-color: var(--border);
+  color: #ffffff;
+  border-color: #ff4500;
+  box-shadow: 0 0 0 1px #ff4500;
 }
 
 .record-item-zodiac.position-2 {
   font-weight: 700;
-  color: var(--text);
-  border-color: var(--border);
+  color: #ffffff;
+  border-color: #ff8c00;
+  box-shadow: 0 0 0 1px #ff8c00;
 }
 
 .record-item-zodiac.position-3 {
   font-weight: 700;
-  color: var(--text);
-  border-color: var(--border);
+  color: #ffffff;
+  border-color: #ffd700;
+  box-shadow: 0 0 0 1px #ffd700;
 }
 
 .record-item-zodiac.position-4,
 .record-item-zodiac.position-5,
 .record-item-zodiac.position-6 {
   font-weight: 500;
-  color: var(--text);
-  border-color: var(--border);
+  color: #ffffff;
+  border-color: #555555;
+  box-shadow: 0 0 0 1px #555555;
 }
 
 @media (prefers-color-scheme: dark) {
   .record-item-zodiac {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: #555555;
   }
   
   .record-item-zodiac.position-4,
   .record-item-zodiac.position-5,
   .record-item-zodiac.position-6 {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: #555555;
   }
 }
 
@@ -2475,7 +2475,7 @@ input[type="checkbox"]{
 .record-item-periods {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   width: 100%;
 }
 
@@ -2498,7 +2498,7 @@ input[type="checkbox"]{
 
 .period-label {
   font-size: 13px;
-  color: var(--sub-text);
+  color: #888888;
   min-width: 70px;
 }
 
@@ -2514,17 +2514,15 @@ input[type="checkbox"]{
   border-radius: 16px;
   font-size: 13px;
   font-weight: 500;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  color: var(--text);
+  background: #333333;
+  border: 1px solid #555555;
+  color: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   .period-zodiac {
-    background: rgba(30, 30, 30, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #333333;
+    border: 1px solid #555555;
   }
 }
 
