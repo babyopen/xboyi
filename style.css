@@ -81,6 +81,7 @@
   
   /* iOS原生色彩适配 */ 
   --ios-blue: #007AFF;       /* iOS系统蓝 */ 
+  --ios-blue-rgb: 0, 122, 255; /* iOS系统蓝RGB值 */ 
   --ios-red: #FF3B30;        /* iOS系统红 */ 
   --ios-green: #34C759;      /* iOS系统绿 */ 
   --ios-yellow: #FFCC00;     /* iOS系统黄 */ 
@@ -257,7 +258,7 @@
  
  /* iOS按钮点击反馈（仿原生按压） */ 
  .ios-btn:active:not(:disabled) { 
-   background-color: rgba(0, 122, 255, 0.9); 
+   background-color: rgba(var(--ios-blue-rgb), 0.9); 
    transform: scale(0.98); 
  } 
  
