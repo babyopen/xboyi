@@ -1,6 +1,6 @@
 // ====================== 数据获取模块 ======================
 
-import { CONFIG } from '../../../config.js';
+import { CONFIG, ApiConfig } from '../../../config.js';
 import { Storage } from '../../../storage.js';
 import { StateManager } from '../../../state-manager.js';
 import { Toast } from '../../../toast.js';
@@ -71,7 +71,7 @@ export const dataFetch = {
     const dataSources = [
       {
         name: '主数据源',
-        url: CONFIG.API.LATEST
+        url: ApiConfig.getLatestApi()
       },
       {
         name: '备用数据源1',
@@ -130,7 +130,7 @@ export const dataFetch = {
    */
   _fetchHistoryData: async (year, retries = 3) => {
     dataFetch._log('info', `开始获取历史数据，年份: ${year}，重试次数: ${retries}`);
-    const url = CONFIG.API.HISTORY + year;
+    const url = ApiConfig.getHistoryApi(year);
     dataFetch._log('debug', `请求URL: ${url}`);
     
     for (let i = 0; i < retries; i++) {

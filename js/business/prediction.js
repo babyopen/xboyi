@@ -634,12 +634,13 @@ export const prediction = {
       console.log('开始保存生肖数据，期号:', issue);
       console.log('生肖数据:', top6Zodiacs);
       
-      // 保存到记录页面
+      // 保存到记录页面（标记为精选生肖类型）
       import('./record.js').then(({ record }) => {
         try {
           const success = record.saveZodiacRecord({
             issue: issue,
             zodiacs: top6Zodiacs,
+            recordType: 'selected',
             periodData: {
               10: prediction.getTopZodiacsByPeriod(10),
               20: prediction.getTopZodiacsByPeriod(20),
@@ -660,6 +661,56 @@ export const prediction = {
       });
     } catch(e) {
       console.error('保存精选生肖到记录页面失败:', e);
+    }
+  },
+
+  /**
+   * 保存生肖预测到记录页面（普通预测，不带类型标记）
+   */
+  saveZodiacPredictionToRecord: () => {
+    try {
+      const topZodiacs = prediction.getTopZodiacsByPeriod(10);
+      
+      if (!topZodiacs || topZodiacs.length === 0) {
+        console.log('没有生肖预测数据');
+        return;
+      }
+      
+      const issue = prediction.getCurrentIssue();
+      if (!issue) {
+        console.error('获取期号失败');
+        return;
+      }
+      
+      console.log('开始保存生肖预测数据，期号:', issue);
+      console.log('生肖预测数据:', topZodiacs);
+      
+      import('./record.js').then(({ record }) => {
+        try {
+          const success = record.saveZodiacRecord({
+            issue: issue,
+            zodiacs: topZodiacs,
+            periodData: {
+              10: prediction.getTopZodiacsByPeriod(10),
+              20: prediction.getTopZodiacsByPeriod(20),
+              30: prediction.getTopZodiacsByPeriod(30)
+            }
+          });
+          
+          if (success) {
+            console.log('保存生肖预测到记录页面成功');
+            Toast.show('生肖预测已保存到记录页面');
+          } else {
+            console.error('保存生肖预测到记录页面失败');
+          }
+        } catch (saveError) {
+          console.error('保存生肖预测到记录页面失败:', saveError);
+        }
+      }).catch(importError => {
+        console.error('导入record模块失败:', importError);
+      });
+    } catch(e) {
+      console.error('保存生肖预测到记录页面失败:', e);
     }
   },
 

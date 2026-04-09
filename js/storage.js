@@ -22,7 +22,8 @@ export const Storage = {
     HISTORY_CACHE: 'historyCache',
     HISTORY_CACHE_TIME: 'historyCacheTime',
     ZODIAC_RECORDS: 'zodiacRecords',
-    NUMBER_RECORDS: 'numberRecords'
+    NUMBER_RECORDS: 'numberRecords',
+    CUSTOM_API_CONFIG: 'customApiConfig'
   }),
 
   /**
@@ -471,6 +472,112 @@ export const Storage = {
       return Storage.remove(Storage.KEYS.NUMBER_RECORDS);
     } catch (e) {
       console.error('清除号码记录失败:', e);
+      return false;
+    }
+  },
+
+  /**
+   * 保存自定义API配置
+   * @param {Object} apiConfig - API配置对象
+   * @param {string} apiConfig.latest - 最新开奖API地址
+   * @param {string} apiConfig.history - 历史数据API地址
+   * @returns {boolean} 是否保存成功
+   */
+  saveCustomApi: (apiConfig) => {
+    try {
+      if (!apiConfig || typeof apiConfig !== 'object') {
+        Toast.show('API配置格式错误');
+        return false;
+      }
+      
+      const { latest, history } = apiConfig;
+      if (!latest || !history) {
+        Toast.show('请填写完整的API地址');
+        return false;
+      }
+      
+      // 验证URL格式
+      const validateUrl = (url) => {
+        if (!url || typeof url !== 'string') {
+          return false;
+        }
+        try {
+          const urlObj = new URL(url);
+          return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+        } catch (error) {
+          return false;
+        }
+      };
+      
+      if (!validateUrl(latest)) {
+        Toast.show('最新开奖API地址格式无效');
+        return false;
+      }
+      if (!validateUrl(history)) {
+        Toast.show('历史数据API地址格式无效');
+        return false;
+      }
+      
+      // 转义URL防止XSS
+      const escapeHtml = (text) => {
+        if (!text || typeof text !== 'string') {
+          return '';
+        }
+        const escapeMap = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#x27;',
+          '/': '&#x2F;'
+        };
+        return text.replace(/[&<>"'/]/g, (char) => escapeMap[char] || char);
+      };
+      
+      const escapedConfig = {
+        latest: escapeHtml(latest),
+        history: escapeHtml(history)
+      };
+      
+      const success = Storage.set(Storage.KEYS.CUSTOM_API_CONFIG, escapedConfig);
+      if (success) {
+        Toast.show('API配置保存成功，请刷新页面生效');
+      }
+      return success;
+    } catch (e) {
+      console.error('保存自定义API配置失败:', e);
+      Toast.show('保存失败，请重试');
+      return false;
+    }
+  },
+
+  /**
+   * 加载自定义API配置
+   * @returns {Object|null} API配置对象或null
+   */
+  loadCustomApi: () => {
+    try {
+      return Storage.get(Storage.KEYS.CUSTOM_API_CONFIG, null);
+    } catch (e) {
+      console.error('加载自定义API配置失败:', e);
+      return null;
+    }
+  },
+
+  /**
+   * 重置自定义API配置（恢复为默认）
+   * @returns {boolean} 是否重置成功
+   */
+  resetCustomApi: () => {
+    try {
+      const success = Storage.remove(Storage.KEYS.CUSTOM_API_CONFIG);
+      if (success) {
+        Toast.show('API配置已重置为默认，请刷新页面生效');
+      }
+      return success;
+    } catch (e) {
+      console.error('重置自定义API配置失败:', e);
+      Toast.show('重置失败，请重试');
       return false;
     }
   }

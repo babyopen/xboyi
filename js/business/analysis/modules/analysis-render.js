@@ -8,6 +8,7 @@ import { PerformanceMonitor } from '../../../performance-monitor.js';
 import { Toast } from '../../../toast.js';
 import { DataQuery } from '../../../data-query.js';
 import { IssueManager } from '../../issue-manager.js';
+import { Utils } from '../../../utils.js';
 
 export const analysisRender = {
   /**
@@ -38,6 +39,144 @@ export const analysisRender = {
   },
 
   /**
+   * 更新热门结论部分DOM元素
+   * @param {Object} data - 分析数据
+   * @param {Map} fullNumZodiacMap - 号码-生肖映射
+   */
+  updateHotConclusion: (data, fullNumZodiacMap) => {
+    // 构建热门特码的球号显示（使用多维度筛选算法）
+    const buildHotNumberBalls = (hotNumStr) => {
+      // 使用多维度筛选算法获取热门号码
+      let hotNums = analysisCalc.getHotNumbers(data, 5, fullNumZodiacMap);
+      
+      // 按数字大小排序
+      hotNums.sort((a, b) => a - b);
+      
+      let ballHtml = '<div class="ball-group">';
+      hotNums.forEach(num => {
+        const color = analysisCalc.getColor(num);
+        const zodiac = DataQuery._getZodiacByNum(num);
+        const element = analysisCalc.getWuxing(num);
+        const numStr = String(num).padStart(2, '0');
+        const zodiacText = element ? `${zodiac}/${element}` : zodiac;
+        ballHtml += `
+          <div class="ball-item">
+            <div class="ball ${color}">${numStr}</div>
+            <div class="ball-zodiac">${zodiacText}</div>
+          </div>
+        `;
+      });
+      ballHtml += '</div>';
+      return ballHtml;
+    };
+
+    // 热门结论相关DOM元素
+    const hotConclusionElements = {
+      'hotShape': `${data.hotSD[0]} / ${data.hotBS[0]}`,
+      'hotZodiac': data.hotZod,
+      'hotHeadTail': `${data.hotHead[0]}头 / ${data.hotTail[0]}尾`,
+      'hotColorWx': `${data.hotColor[0]} / ${data.hotWx[0]}`,
+      'hotMiss': `热:${data.miss.hot} 温:${data.miss.warm} 冷:${data.miss.cold} | 最大遗漏:${data.miss.maxMiss}期`,
+      'hotShape2': analysisRender.getTopHot(Object.entries(data.singleDouble).concat(Object.entries(data.bigSmall))),
+      'hotRange2': analysisRender.getTopHot(Object.entries(data.range)),
+      'hotHead2': analysisRender.getTopHot(Object.entries(data.head)),
+      'hotTail2': analysisRender.getTopHot(Object.entries(data.tail)),
+      'hotColor2': analysisRender.getTopHot(Object.entries(data.color)),
+      'hotWuxing2': analysisRender.getTopHot(Object.entries(data.wuxing)),
+      'hotAnimal': analysisRender.getTopHot(Object.entries(data.animal)),
+      'hotZodiac2': Object.entries(data.zodiac).sort((a, b) => b[1] - a[1]).slice(0, 5).map(i => `${i[0]}(${i[1]})`).join(' '),
+      'missCur': data.miss.curMaxMiss,
+      'missAvg': data.miss.avgMiss,
+      'missMax': data.miss.maxMiss,
+      'missHot': data.miss.hot,
+      'missWarm': data.miss.warm,
+      'missCold': data.miss.cold,
+      'hotColdTip': `热:${data.miss.hot} 温:${data.miss.warm} 冷:${data.miss.cold}`,
+      'streakCur': data.streak.curStreak,
+      'streakMax': data.streak.maxStreak,
+      'streakTip': `当前:${data.streak.curStreak}期 最长:${data.streak.maxStreak}期`
+    };
+
+    Object.entries(hotConclusionElements).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if(el) el.innerText = value;
+    });
+
+    // 特殊处理热门特码的显示
+    const hotNumberEl = document.getElementById('hotNumber');
+    if(hotNumberEl) {
+      hotNumberEl.innerHTML = buildHotNumberBalls(data.hotNum);
+      hotNumberEl.style.color = 'inherit';
+    }
+  },
+
+  /**
+   * 更新统计网格部分DOM元素
+   * @param {Object} data - 分析数据
+   */
+  updateStatsGrid: (data) => {
+    // 统计网格相关DOM元素
+    const statsGridElements = {
+      'odd': data.singleDouble['单'],
+      'even': data.singleDouble['双'],
+      'big': data.bigSmall['大'],
+      'small': data.bigSmall['小'],
+      'r1': data.range['1-9'],
+      'r2': data.range['10-19'],
+      'r3': data.range['20-29'],
+      'r4': data.range['30-39'],
+      'r5': data.range['40-49'],
+      'h0': data.head[0],
+      'h1': data.head[1],
+      'h2': data.head[2],
+      'h3': data.head[3],
+      'h4': data.head[4],
+      'cRed': data.color['红'],
+      'cBlue': data.color['蓝'],
+      'cGreen': data.color['绿'],
+      'wJin': data.wuxing['金'],
+      'wMu': data.wuxing['木'],
+      'wShui': data.wuxing['水'],
+      'wHuo': data.wuxing['火'],
+      'wTu': data.wuxing['土'],
+      'aniHome': data.animal['家禽'],
+      'aniWild': data.animal['野兽']
+    };
+
+    Object.entries(statsGridElements).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if(el) el.innerText = value;
+    });
+
+    // 尾数行渲染
+    const tailRow = document.getElementById('tailRow');
+    if(tailRow) {
+      let tailHtml = '';
+      for(let t = 0; t <= 9; t++) {
+        tailHtml += `<div class="analysis-item" data-action="showStatDetail" data-stat-type="tail${t}" style="cursor:pointer;"><div class="label">尾${t}</div><div class="value">${data.tail[t]}</div></div>`;
+      }
+      tailRow.innerHTML = tailHtml;
+    }
+  },
+
+  /**
+   * 渲染排行榜部分
+   * @param {Object} data - 分析数据
+   */
+  renderRankings: (data) => {
+    // 完整排行渲染
+    analysisRender.renderFullRank('singleDoubleRank', data.singleDouble, data.total);
+    analysisRender.renderFullRank('bigSmallRank', data.bigSmall, data.total);
+    analysisRender.renderFullRank('rangeRank', data.range, data.total);
+    analysisRender.renderFullRank('headRank', data.head, data.total);
+    analysisRender.renderFullRank('tailRank', data.tail, data.total);
+    analysisRender.renderFullRank('colorRank', data.color, data.total);
+    analysisRender.renderFullRank('wuxingRank', data.wuxing, data.total);
+    analysisRender.renderFullRank('animalRank', data.animal, data.total);
+    analysisRender.renderFullRank('zodiacRank', data.zodiac, data.total);
+  },
+
+  /**
    * 渲染历史记录
    */
   renderHistory: () => {
@@ -60,7 +199,8 @@ export const analysisRender = {
           
           list.forEach(item => {
             try {
-              const codeArr = (item.openCode || '0,0,0,0,0,0,0').split(',');
+              const escapedOpenCode = Utils.escapeHtml(item.openCode || '0,0,0,0,0,0,0');
+              const codeArr = escapedOpenCode.split(',');
               const s = analysisCalc.getSpecial(item);
               const zodArr = s?.fullZodArr || [];
               let balls = '';
@@ -74,7 +214,7 @@ export const analysisRender = {
               const itemDiv = document.createElement('div');
               itemDiv.className = 'history-item';
               itemDiv.innerHTML = `
-                <div class="history-expect">第${item.expect || ''}期</div>
+                <div class="history-expect">第${Utils.escapeHtml(item.expect || '')}期</div>
                 <div class="ball-group">${balls}</div>
               `;
               fragment.appendChild(itemDiv);
@@ -127,115 +267,10 @@ export const analysisRender = {
         if(zod) fullNumZodiacMap.set(num, zod);
       }
 
-      // 构建热门特码的球号显示（使用多维度筛选算法）
-      const buildHotNumberBalls = (hotNumStr) => {
-        // 使用多维度筛选算法获取热门号码
-        let hotNums = analysisCalc.getHotNumbers(data, 5, fullNumZodiacMap);
-        
-        // 按数字大小排序
-        hotNums.sort((a, b) => a - b);
-        
-        let ballHtml = '<div class="ball-group">';
-        hotNums.forEach(num => {
-          const color = analysisCalc.getColor(num);
-          const zodiac = DataQuery._getZodiacByNum(num);
-          const element = analysisCalc.getWuxing(num);
-          const numStr = String(num).padStart(2, '0');
-          const zodiacText = element ? `${zodiac}/${element}` : zodiac;
-          ballHtml += `
-            <div class="ball-item">
-              <div class="ball ${color}">${numStr}</div>
-              <div class="ball-zodiac">${zodiacText}</div>
-            </div>
-          `;
-        });
-        ballHtml += '</div>';
-        return ballHtml;
-      };
-
-      // 更新DOM元素
-      const elements = {
-        'hotShape': `${data.hotSD[0]} / ${data.hotBS[0]}`,
-        'hotZodiac': data.hotZod,
-        'hotHeadTail': `${data.hotHead[0]}头 / ${data.hotTail[0]}尾`,
-        'hotColorWx': `${data.hotColor[0]} / ${data.hotWx[0]}`,
-        'hotMiss': `热:${data.miss.hot} 温:${data.miss.warm} 冷:${data.miss.cold} | 最大遗漏:${data.miss.maxMiss}期`,
-        'odd': data.singleDouble['单'],
-        'even': data.singleDouble['双'],
-        'big': data.bigSmall['大'],
-        'small': data.bigSmall['小'],
-        'r1': data.range['1-9'],
-        'r2': data.range['10-19'],
-        'r3': data.range['20-29'],
-        'r4': data.range['30-39'],
-        'r5': data.range['40-49'],
-        'h0': data.head[0],
-        'h1': data.head[1],
-        'h2': data.head[2],
-        'h3': data.head[3],
-        'h4': data.head[4],
-        'cRed': data.color['红'],
-        'cBlue': data.color['蓝'],
-        'cGreen': data.color['绿'],
-        'wJin': data.wuxing['金'],
-        'wMu': data.wuxing['木'],
-        'wShui': data.wuxing['水'],
-        'wHuo': data.wuxing['火'],
-        'wTu': data.wuxing['土'],
-        'aniHome': data.animal['家禽'],
-        'aniWild': data.animal['野兽'],
-        'hotShape2': analysisRender.getTopHot(Object.entries(data.singleDouble).concat(Object.entries(data.bigSmall))),
-        'hotRange2': analysisRender.getTopHot(Object.entries(data.range)),
-        'hotHead2': analysisRender.getTopHot(Object.entries(data.head)),
-        'hotTail2': analysisRender.getTopHot(Object.entries(data.tail)),
-        'hotColor2': analysisRender.getTopHot(Object.entries(data.color)),
-        'hotWuxing2': analysisRender.getTopHot(Object.entries(data.wuxing)),
-        'hotAnimal': analysisRender.getTopHot(Object.entries(data.animal)),
-        'hotZodiac2': Object.entries(data.zodiac).sort((a, b) => b[1] - a[1]).slice(0, 5).map(i => `${i[0]}(${i[1]})`).join(' '),
-        'missCur': data.miss.curMaxMiss,
-        'missAvg': data.miss.avgMiss,
-        'missMax': data.miss.maxMiss,
-        'missHot': data.miss.hot,
-        'missWarm': data.miss.warm,
-        'missCold': data.miss.cold,
-        'hotColdTip': `热:${data.miss.hot} 温:${data.miss.warm} 冷:${data.miss.cold}`,
-        'streakCur': data.streak.curStreak,
-        'streakMax': data.streak.maxStreak,
-        'streakTip': `当前:${data.streak.curStreak}期 最长:${data.streak.maxStreak}期`
-      };
-
-      Object.entries(elements).forEach(([id, value]) => {
-        const el = document.getElementById(id);
-        if(el) el.innerText = value;
-      });
-
-      // 特殊处理热门特码的显示
-      const hotNumberEl = document.getElementById('hotNumber');
-      if(hotNumberEl) {
-        hotNumberEl.innerHTML = buildHotNumberBalls(data.hotNum);
-        hotNumberEl.style.color = 'inherit';
-      }
-
-      // 尾数行渲染
-      const tailRow = document.getElementById('tailRow');
-      if(tailRow) {
-        let tailHtml = '';
-        for(let t = 0; t <= 9; t++) {
-          tailHtml += `<div class="analysis-item" data-action="showStatDetail" data-stat-type="tail${t}" style="cursor:pointer;"><div class="label">尾${t}</div><div class="value">${data.tail[t]}</div></div>`;
-        }
-        tailRow.innerHTML = tailHtml;
-      }
-
-      // 完整排行渲染
-      analysisRender.renderFullRank('singleDoubleRank', data.singleDouble, data.total);
-      analysisRender.renderFullRank('bigSmallRank', data.bigSmall, data.total);
-      analysisRender.renderFullRank('rangeRank', data.range, data.total);
-      analysisRender.renderFullRank('headRank', data.head, data.total);
-      analysisRender.renderFullRank('tailRank', data.tail, data.total);
-      analysisRender.renderFullRank('colorRank', data.color, data.total);
-      analysisRender.renderFullRank('wuxingRank', data.wuxing, data.total);
-      analysisRender.renderFullRank('animalRank', data.animal, data.total);
-      analysisRender.renderFullRank('zodiacRank', data.zodiac, data.total);
+      // 调用子函数完成DOM更新
+      analysisRender.updateHotConclusion(data, fullNumZodiacMap);
+      analysisRender.updateStatsGrid(data);
+      analysisRender.renderRankings(data);
     }, 'renderFullAnalysis');
   },
 

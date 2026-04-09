@@ -7,7 +7,7 @@
 export const CONFIG = Object.freeze({
   VERSION: 'V1.0.11',
   DATA_VERSION: 1, // 数据版本号，用于后续数据迁移
-  // API配置
+  // API配置（默认值，用户可自定义）
   API: Object.freeze({
     LATEST: 'https://macaumarksix.com/api/macaujc2.com',
     HISTORY: 'https://history.macaumarksix.com/history/macaujc2/y/'
@@ -91,3 +91,113 @@ export const CONFIG = Object.freeze({
     SWITCH_NAV: 'switchBottomNav'
   })
 });
+
+/**
+ * API配置管理器（支持用户自定义数据源）
+ * @namespace ApiConfig
+ */
+export const ApiConfig = {
+  /**
+   * 存储key常量
+   * @readonly
+   */
+  STORAGE_KEYS: Object.freeze({
+    CUSTOM_API_CONFIG: 'customApiConfig'
+  }),
+
+  /**
+   * 获取API配置（优先使用用户自定义配置，后备使用默认配置）
+   * @returns {Object} API配置对象
+   */
+  getConfig: () => {
+    try {
+      // 尝试从localStorage读取用户自定义配置
+      const customConfigJson = localStorage.getItem(ApiConfig.STORAGE_KEYS.CUSTOM_API_CONFIG);
+      if (customConfigJson) {
+        const customConfig = JSON.parse(customConfigJson);
+        // 验证配置完整性
+        if (customConfig.latest && customConfig.history) {
+          return {
+            LATEST: customConfig.latest,
+            HISTORY: customConfig.history
+          };
+        }
+      }
+    } catch (error) {
+      console.error('读取自定义API配置失败，使用默认配置:', error);
+    }
+    
+    // 使用默认配置
+    return CONFIG.API;
+  },
+
+  /**
+   * 获取最新开奖API地址
+   * @returns {string} 最新开奖API地址
+   */
+  getLatestApi: () => {
+    const config = ApiConfig.getConfig();
+    return config.LATEST;
+  },
+
+  /**
+   * 获取历史数据API地址（自动添加斜杠以确保正确拼接年份）
+   * @param {number} [year] - 年份
+   * @returns {string} 历史数据API地址
+   */
+  getHistoryApi: (year) => {
+    const config = ApiConfig.getConfig();
+    let historyUrl = config.HISTORY;
+    
+    // 确保历史API地址以斜杠结尾，以便正确拼接年份
+    if (!historyUrl.endsWith('/')) {
+      historyUrl += '/';
+    }
+    
+    if (year) {
+      return historyUrl + year;
+    }
+    return historyUrl;
+  },
+
+  /**
+   * 验证URL格式
+   * @param {string} url - 要验证的URL
+   * @returns {boolean} 是否有效
+   */
+  validateUrl: (url) => {
+    if (!url || typeof url !== 'string') {
+      return false;
+    }
+    
+    // 基本的URL格式验证
+    try {
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch (error) {
+      return false;
+    }
+  },
+
+  /**
+   * 转义HTML特殊字符防止XSS
+   * @param {string} text - 要转义的文本
+   * @returns {string} 转义后的文本
+   */
+  escapeHtml: (text) => {
+    if (!text || typeof text !== 'string') {
+      return '';
+    }
+    
+    const escapeMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#x27;',
+      '/': '&#x2F;'
+    };
+    
+    return text.replace(/[&<>"'/]/g, (char) => escapeMap[char] || char);
+  }
+};

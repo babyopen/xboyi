@@ -25,6 +25,8 @@ export const EventBinder = {
   init: () => {
     // 全局点击事件委托
     document.addEventListener('click', EventBinder.handleGlobalClick);
+    // 全局change事件委托
+    document.addEventListener('change', EventBinder.handleGlobalChange);
     // 键盘回车/空格事件（无障碍支持）
     document.addEventListener('keydown', EventBinder.handleKeyDown);
     // 滚动事件（已节流）
@@ -219,6 +221,8 @@ export const EventBinder = {
       if(action === 'loadMoreHistory') Business.loadMoreHistory();
       if(action === 'copyHotNumbers') Business.copyHotNumbers();
       if(action === 'copyZodiacNumbers') Business.copyZodiacNumbers();
+      if(action === 'copySelectedZodiacs') Business.copySelectedZodiacs();
+      if(action === 'saveZodiacPrediction') Business.saveZodiacPredictionToRecord();
       if(action === 'favoriteZodiacNumbers') Business.favoriteZodiacNumbers();
       if(action === 'saveNumberRecord') Business.saveNumberRecord();
       if(action === 'refreshHotCold') Business.refreshHotCold();
@@ -369,6 +373,21 @@ export const EventBinder = {
     }
 
 
+  },
+
+  /**
+   * 全局change事件处理
+   * @param {Event} e - change事件
+   */
+  handleGlobalChange: (e) => {
+    const target = e.target;
+    const actionBtn = target.closest('[data-action]');
+    if (!actionBtn) return;
+    
+    const action = actionBtn.dataset.action;
+    if (action === 'toggleExcludeLock') {
+      Business.toggleExcludeLock();
+    }
   },
 
   /**

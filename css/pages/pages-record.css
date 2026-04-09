@@ -8,6 +8,85 @@
   box-sizing: border-box;
 }
 
+/* 记录折叠容器样式 */
+.record-collapse-container {
+  width: 100%;
+  margin-bottom: 12px;
+  border-radius: var(--ios-corner-radius);
+  overflow: hidden;
+  box-shadow: var(--ios-shadow-sm);
+  background: var(--ios-gray-50);
+}
+
+.record-collapse-header {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  position: relative;
+  border-bottom: 0.3px solid transparent;
+}
+
+.record-collapse-header-content {
+  flex: 1;
+  margin-right: 12px;
+}
+
+.record-collapse-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin: -8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ios-gray-400);
+  transition: var(--ios-transition);
+  flex-shrink: 0;
+}
+
+.record-collapse-toggle:hover,
+.record-collapse-toggle:focus {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ios-gray-600);
+}
+
+.record-collapse-icon {
+  transition: transform 0.3s ease;
+  transform: rotate(0deg);
+}
+
+.record-collapse-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  opacity: 0;
+}
+
+.record-collapse-content:not(.collapsed) {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .record-collapse-container {
+    background: rgba(30, 30, 30, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .record-collapse-toggle {
+    color: var(--ios-gray-300);
+  }
+  
+  .record-collapse-toggle:hover,
+  .record-collapse-toggle:focus {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--ios-gray-100);
+  }
+}
+
 .record-header {
   display: flex;
   justify-content: space-between;
@@ -73,7 +152,8 @@
 
 .record-item-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 12px;
   margin-bottom: 16px;
   box-sizing: border-box;
@@ -83,7 +163,8 @@
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   box-sizing: border-box;
 }
 
@@ -187,6 +268,8 @@
   color: var(--ios-gray-600);
   background: var(--ios-gray-100);
   border: 0.3px solid transparent;
+  flex-shrink: 0;
+  align-self: center;
 }
 
 .record-item-actual.hit {
@@ -214,7 +297,7 @@
 
 .record-item-period {
   display: grid;
-  grid-template-columns: 42px 1fr;
+  grid-template-columns: 42px 1fr auto;
   align-items: start;
   margin-bottom: 8px;
   gap: 8px;
@@ -253,6 +336,38 @@
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+.period-zodiac-hit {
+  background: rgba(82, 196, 26, 0.2);
+  border-color: #52c41a;
+  color: #52c41a;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(82, 196, 26, 0.3);
+}
+
+/* 期数开奖核对结果 */
+.period-actual {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ios-gray-600);
+  background: var(--ios-gray-100);
+  border: 0.3px solid transparent;
+  align-self: center;
+  white-space: nowrap;
+  margin-left: 4px;
+}
+
+.period-actual-hit {
+  color: #52c41a;
+  background: rgba(82, 196, 26, 0.1);
+}
+
+.period-actual-miss {
+  color: #f5222d;
+  background: rgba(245, 34, 45, 0.1);
 }
 
 /* 结果样式 */
@@ -318,7 +433,7 @@
   }
 
   .record-item-period {
-    grid-template-columns: 38px 1fr;
+    grid-template-columns: 38px 1fr auto;
     gap: 6px;
   }
 
@@ -414,6 +529,30 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
+  .period-actual {
+    background: var(--ios-gray-600);
+    border: 0.3px solid transparent;
+    color: var(--text);
+  }
+
+  .period-actual-hit {
+    color: #52c41a;
+    background: rgba(82, 196, 26, 0.2);
+  }
+
+  .period-actual-miss {
+    color: #f5222d;
+    background: rgba(245, 34, 45, 0.2);
+  }
+
+  .period-zodiac-hit {
+    background: rgba(82, 196, 26, 0.3);
+    border-color: #52c41a;
+    color: #52c41a;
+    font-weight: 600;
+    box-shadow: 0 0 0 1px rgba(82, 196, 26, 0.4);
+  }
+
   .record-item-status {
     color: var(--sub-text);
   }
@@ -429,8 +568,16 @@
     border-radius: 14px;
   }
   
+  .record-item-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
   .record-item-zodiacs {
     gap: 6px;
+    flex: none;
+    width: 100%;
+    margin-bottom: 8px;
   }
   
   .record-item-zodiac {
@@ -440,7 +587,7 @@
   }
 
   .record-item-period {
-    grid-template-columns: 34px 1fr;
+    grid-template-columns: 34px 1fr auto;
     gap: 6px;
   }
 
@@ -722,6 +869,659 @@
   
   .draw-time {
     font-size: var(--font-size-sm);
+  }
+}
+
+/* ============================================================================
+   iOS风格记录卡片设计
+   ============================================================================ */
+
+/* 双端通用iOS风格卡片 */
+.period-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 20px;
+  margin: 12px 16px;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+/* 支持毛玻璃的设备（iOS/安卓高版本）自动生效 */
+@supports (-webkit-backdrop-filter: blur(20px)) {
+  .period-card {
+    background: rgba(255, 255, 255, 0.8);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .period-card {
+    background: rgba(30, 30, 30, 0.92);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  @supports (-webkit-backdrop-filter: blur(20px)) {
+    .period-card {
+      background: rgba(30, 30, 30, 0.8);
+    }
+  }
+}
+
+/* 标题栏 */
+.period-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.period-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1C1C1E;
+  margin: 0;
+}
+
+.period-time {
+  font-size: 14px;
+  color: #98989F;
+  margin-right: 8px;
+}
+
+.period-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 生肖标签容器 - 6列等宽网格布局（完美对齐） */
+.zodiac-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* 生肖标签基础样式 */
+.zodiac-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  background: rgba(120, 120, 128, 0.08);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1C1C1E;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+/* 标签点击反馈 */
+.zodiac-tag:active {
+  transform: scale(0.96);
+  background: rgba(120, 120, 128, 0.12);
+}
+
+/* 选中/高亮态（如你图中的"虎"标签） */
+.zodiac-tag.active {
+  background: rgba(255, 59, 48, 0.1);
+  color: #FF3B30;
+  border-color: #FF3B30;
+  font-weight: 600;
+}
+
+/* 期数行标签（10期/20期/30期）样式 */
+.zodiac-row {
+  display: grid;
+  grid-template-columns: 48px repeat(6, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.zodiac-row-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #98989F;
+  text-align: right;
+  padding-right: 8px;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .period-title {
+    color: #F2F2F7;
+  }
+  
+  .period-time {
+    color: #98989F;
+  }
+  
+  .zodiac-tag {
+    background: rgba(120, 120, 128, 0.16);
+    color: #F2F2F7;
+  }
+  
+  .zodiac-tag:active {
+    background: rgba(120, 120, 128, 0.24);
+  }
+  
+  .zodiac-tag.active {
+    background: rgba(255, 59, 48, 0.2);
+    color: #FF3B30;
+  }
+  
+  .zodiac-row-label {
+    color: #98989F;
+  }
+}
+
+/* 期数开奖核对结果适配新UI */
+.zodiac-period-result {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.zodiac-period-actual {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.zodiac-period-hit {
+  color: #52c41a;
+  background: rgba(82, 196, 26, 0.1);
+}
+
+.zodiac-period-miss {
+  color: #f5222d;
+  background: rgba(245, 34, 45, 0.1);
+}
+
+/* 命中生肖高亮适配新UI */
+.zodiac-tag.highlight-hit {
+  background: rgba(82, 196, 26, 0.2);
+  border-color: #52c41a;
+  color: #52c41a;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(82, 196, 26, 0.3);
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .zodiac-period-hit {
+    color: #52c41a;
+    background: rgba(82, 196, 26, 0.2);
+  }
+  
+  .zodiac-period-miss {
+    color: #f5222d;
+    background: rgba(245, 34, 45, 0.2);
+  }
+  
+  .zodiac-tag.highlight-hit {
+    background: rgba(82, 196, 26, 0.3);
+    border-color: #52c41a;
+    color: #52c41a;
+    font-weight: 600;
+    box-shadow: 0 0 0 1px rgba(82, 196, 26, 0.4);
+  }
+}
+
+/* 折叠容器适配新UI */
+.period-collapse-container {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.period-collapse-header {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+}
+
+.period-collapse-header-content {
+  flex: 1;
+  margin-right: 12px;
+}
+
+.period-collapse-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin: -8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #98989F;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.period-collapse-toggle:hover,
+.period-collapse-toggle:focus {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1C1C1E;
+}
+
+.period-collapse-icon {
+  transition: transform 0.3s ease;
+  transform: rotate(0deg);
+}
+
+.period-collapse-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.period-collapse-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  opacity: 0;
+}
+
+.period-collapse-content:not(.collapsed) {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .period-collapse-toggle {
+    color: #98989F;
+  }
+  
+  .period-collapse-toggle:hover,
+  .period-collapse-toggle:focus {
+    background: rgba(255, 255, 255, 0.1);
+    color: #F2F2F7;
+  }
+}
+
+/* 小屏幕设备适配 */
+@media (max-width: 480px) {
+  .period-card {
+    padding: 16px;
+    margin: 8px 12px;
+    border-radius: 14px;
+  }
+  
+  .period-header {
+    margin-bottom: 16px;
+  }
+  
+  .period-title {
+    font-size: 16px;
+  }
+  
+  .period-time {
+    font-size: 13px;
+  }
+  
+  .zodiac-grid {
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .zodiac-tag {
+    height: 40px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+  
+  .zodiac-row {
+    grid-template-columns: 40px repeat(6, 1fr) auto;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .zodiac-row-label {
+    font-size: 14px;
+  }
+  
+  .zodiac-period-actual {
+    padding: 3px 8px;
+    font-size: 10px;
+    border-radius: 8px;
+  }
+}
+
+/* ====================== 记录页面新增样式 ====================== */ 
+ 
+ /* 我的收藏卡片 */ 
+ .favorite-list { 
+   display: flex; 
+   flex-direction: column; 
+   gap: 16px; 
+ } 
+ .favorite-card { 
+   background: var(--card); 
+   border-radius: 20px; 
+   padding: 16px; 
+   box-shadow: var(--shadow-sm); 
+   border: 1px solid var(--border); 
+ } 
+ .fav-header { 
+   display: flex; 
+   justify-content: space-between; 
+   margin-bottom: 12px; 
+ } 
+ .fav-name { 
+   font-weight: 600; 
+   font-size: 16px; 
+ } 
+ .fav-numbers { 
+   display: flex; 
+   flex-wrap: wrap; 
+   gap: 8px; 
+   margin-bottom: 16px; 
+ } 
+ .num-ball-mini { 
+   width: 48px; 
+   height: 48px; 
+   border-radius: 24px; 
+   display: flex; 
+   flex-direction: column; 
+   align-items: center; 
+   justify-content: center; 
+   font-size: 14px; 
+   font-weight: 600; 
+   color: white; 
+   position: relative; 
+ } 
+ .num-ball-mini .num-zodiac { 
+   font-size: 10px; 
+   margin-top: 2px; 
+   opacity: 0.9; 
+ } 
+ .fav-actions { 
+   display: flex; 
+   gap: 12px; 
+   justify-content: flex-end; 
+ } 
+ .fav-btn { 
+   background: none; 
+   border: none; 
+   font-size: 13px; 
+   color: var(--primary); 
+   cursor: pointer; 
+   padding: 4px 8px; 
+ } 
+ .fav-remove { 
+   color: var(--danger); 
+ } 
+ 
+ /* 预测统计卡片 */ 
+ .prediction-stats { 
+   background: var(--bg-secondary); 
+   border-radius: 20px; 
+   padding: 16px; 
+ } 
+ .stats-summary { 
+   display: grid; 
+   grid-template-columns: repeat(4, 1fr); 
+   gap: 12px; 
+   text-align: center; 
+   margin-bottom: 20px; 
+   padding-bottom: 16px; 
+   border-bottom: 1px solid var(--border); 
+ } 
+ .stat-item { 
+   display: flex; 
+   flex-direction: column; 
+ } 
+ .stat-label { 
+   font-size: 12px; 
+   color: var(--sub-text); 
+ } 
+ .stat-value { 
+   font-size: 20px; 
+   font-weight: 700; 
+   color: var(--primary); 
+ } 
+ .stats-categories { 
+   display: flex; 
+   gap: 16px; 
+   flex-wrap: wrap; 
+ } 
+ .cat-card { 
+   flex: 1; 
+   background: var(--card); 
+   border-radius: 16px; 
+   padding: 12px; 
+   text-align: center; 
+ } 
+ .cat-title { 
+   font-weight: 600; 
+   margin-bottom: 8px; 
+ } 
+ .cat-detail { 
+   font-size: 13px; 
+   color: var(--sub-text); 
+   margin-bottom: 6px; 
+ } 
+ .cat-rate { 
+   font-size: 15px; 
+   font-weight: 600; 
+   color: var(--success); 
+ } 
+ 
+ /* 精选生肖卡片 */ 
+ .selected-zodiac-item-card { 
+   background: var(--bg-secondary); 
+   border-radius: 20px; 
+   padding: 16px; 
+ } 
+ .selected-header { 
+   display: flex; 
+   justify-content: space-between; 
+   align-items: center; 
+   margin-bottom: 12px; 
+ } 
+ .selected-issue { 
+   font-weight: 600; 
+   font-size: 15px; 
+ } 
+ .selected-date { 
+   font-size: 12px; 
+   color: var(--sub-text); 
+ } 
+ .selected-zodiacs-list { 
+   display: flex; 
+   flex-wrap: wrap; 
+   gap: 8px; 
+ } 
+ .zodiac-tag.small { 
+   font-size: 14px; 
+   padding: 4px 12px; 
+ } 
+ 
+ /* 生肖预测历史列表 */ 
+ .prediction-history-list { 
+   display: flex; 
+   flex-direction: column; 
+   gap: 12px; 
+ } 
+ .prediction-history-item { 
+   background: var(--bg-secondary); 
+   border-radius: 16px; 
+   padding: 12px; 
+   display: flex; 
+   align-items: center; 
+   gap: 12px; 
+ } 
+ .history-checkbox { 
+   flex-shrink: 0; 
+ } 
+ .history-content { 
+   flex: 1; 
+ } 
+ .history-header { 
+   display: flex; 
+   flex-wrap: wrap; 
+   gap: 8px; 
+   margin-bottom: 8px; 
+   font-size: 13px; 
+ } 
+ .history-issue { 
+   font-weight: 600; 
+ } 
+ .history-period { 
+   color: var(--primary); 
+ } 
+ .history-date { 
+   color: var(--sub-text); 
+ } 
+ .history-zodiacs { 
+   display: flex; 
+   flex-wrap: wrap; 
+   gap: 6px; 
+ } 
+ .section-header { 
+   display: flex; 
+   justify-content: space-between; 
+   align-items: center; 
+   margin-bottom: 12px; 
+ } 
+ .section-header h2 { 
+   font-size: 18px; 
+   font-weight: 600; 
+ } 
+ .history-actions { 
+   display: flex; 
+   gap: 8px; 
+ }
+
+/* ====================== recordPage v1.0.11 增补样式 ====================== */
+.record-section {
+  margin: 0 0 16px;
+  padding: 0 12px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.empty-tip {
+  color: var(--sub-text);
+  background: var(--card);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 18px 14px;
+  text-align: center;
+}
+
+.empty-inline-tip {
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.favorite-card {
+  border: 1px solid var(--border);
+}
+
+.fav-numbers {
+  min-height: 48px;
+  align-items: center;
+}
+
+.fav-btn {
+  border-radius: 8px;
+}
+
+.prediction-stats {
+  border: 1px solid var(--border);
+}
+
+.stat-value {
+  color: var(--text);
+}
+
+.cat-card {
+  border: 1px solid var(--border);
+}
+
+.cat-rate {
+  color: var(--primary);
+}
+
+.selected-zodiac-item-card {
+  border: 1px solid var(--border);
+}
+
+.selected-zodiacs-list .zodiac-tag,
+.history-zodiacs .zodiac-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+
+.prediction-history-item {
+  border: 1px solid var(--border);
+}
+
+.history-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .record-section {
+    padding: 0 10px;
+  }
+
+  .section-header {
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stats-summary {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .fav-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .empty-tip {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .selected-zodiacs-list .zodiac-tag,
+  .history-zodiacs .zodiac-tag {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
   }
 }
 

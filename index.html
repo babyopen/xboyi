@@ -286,7 +286,7 @@
       <div class="card-body">
         <div class="exclude-header">
           <div>已排除：<b id="excludeCount" aria-live="polite">0</b> 个</div>
-          <label><input type="checkbox" id="lockExclude" onchange="Business.toggleExcludeLock()"> 锁定排除</label>
+          <label><input type="checkbox" id="lockExclude" data-action="toggleExcludeLock"> 锁定排除</label>
         </div>
         <div id="excludeGrid" class="exclude-grid" role="group" aria-label="号码排除选项"></div>
       </div>
@@ -297,32 +297,45 @@
 
   <!-- 记录页面 -->
   <div class="page" id="recordPage" style="display:none">
-    <!-- 记录页面内容 -->
-    <div class="record-container">
-      <div class="record-header">
-        <h2>精选生肖记录</h2>
-        <button class="btn-mini" data-action="clearZodiacRecords">清空记录</button>
+    <!-- 我的收藏区域 -->
+    <div class="record-section">
+      <div class="section-header">
+        <h2>我的收藏</h2>
+        <button class="btn-mini" id="clearAllFavoritesBtn">清空全部</button>
       </div>
-      
-      <div class="record-list" id="zodiacRecordList">
-        <!-- 记录项将通过JavaScript动态生成 -->
-        <div class="empty-tip">暂无记录</div>
-      </div>
+      <div id="favoriteList" class="favorite-list"></div>
     </div>
-    
-    <div class="record-container" style="margin-top: 20px;">
-      <div class="record-header">
-        <h2>号码记录</h2>
-        <button class="btn-mini" data-action="clearNumberRecords">清空记录</button>
+ 
+    <!-- 预测统计卡片 -->
+    <div class="record-section">
+      <div class="section-header">
+        <h2>预测统计</h2>
+        <button class="btn-mini" id="refreshStatsBtn">刷新</button>
       </div>
-      
-      <div class="record-list" id="numberRecordList">
-        <!-- 记录项将通过JavaScript动态生成 -->
-        <div class="empty-tip">暂无记录</div>
-      </div>
+      <div id="predictionStatsContainer" class="prediction-stats"></div>
     </div>
-    
-    <!-- 免责声明 -->
+ 
+    <!-- 精选生肖卡片（最新一条） -->
+    <div class="record-section">
+      <div class="section-header">
+        <h2>精选生肖</h2>
+        <button class="btn-mini" data-action="clearSelectedZodiac">清空</button>
+      </div>
+      <div id="latestSelectedZodiac"></div>
+    </div>
+ 
+    <!-- 生肖预测历史 -->
+    <div class="record-section">
+      <div class="section-header">
+        <h2>生肖预测历史</h2>
+        <div class="history-actions">
+          <button class="btn-mini" data-action="selectHistory">选择</button>
+          <button class="btn-mini red" data-action="clearHistory">清空</button>
+        </div>
+      </div>
+      <div id="zodiacPredictionHistoryList" class="prediction-history-list"></div>
+    </div>
+ 
     <div class="disclaimer">仅供娱乐，非投注建议</div>
   </div>
 
@@ -465,14 +478,17 @@
           <div class="empty-tip" id="zodiacEmptyTip">暂无开奖历史数据</div>
           <div id="zodiacContent" style="display:none;">
             <div class="zodiac-prediction">
-              <div class="conclusion-title">🔮 生肖预测</div>
+              <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>🔮 生肖预测</span>
+                <button class="btn-mini" data-action="saveZodiacPrediction" title="保存生肖预测" style="font-size:12px;padding:4px 10px;">保存</button>
+              </div>
               <div id="zodiacPredictionGrid" class="zodiac-prediction-grid"></div>
             </div>
 
             <div class="selected-zodiacs">
               <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
                 <span>✨ 精选生肖</span>
-                <button class="btn-mini copy-zodiacs-btn" onclick="Business.copySelectedZodiacs()" title="复制生肖" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;">
+                <button class="btn-mini copy-zodiacs-btn" data-action="copySelectedZodiacs" title="复制生肖" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>

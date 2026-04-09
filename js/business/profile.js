@@ -1,6 +1,7 @@
 // ====================== 我的页面模块 ======================
 
 // 导入必要的模块
+import { CONFIG } from '../config.js';
 import { Storage } from '../storage.js';
 import { Toast } from '../toast.js';
 
@@ -85,6 +86,25 @@ export const profile = {
                   </select>
                 </label>
               </div>
+              <!-- API数据源配置 -->
+              <div class="setting-item" style="border-top: 1px solid #eee; padding-top: 16px; margin-top: 8px;">
+                <h4 style="margin-bottom: 12px;">API数据源配置</h4>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div>
+                    <label style="display: block; margin-bottom: 4px; font-size: 14px; color: #666;">最新开奖API</label>
+                    <input type="text" id="latestApiInput" placeholder="https://example.com/api/latest" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                  </div>
+                  <div>
+                    <label style="display: block; margin-bottom: 4px; font-size: 14px; color: #666;">历史数据API</label>
+                    <input type="text" id="historyApiInput" placeholder="https://example.com/api/history/" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <div style="font-size: 12px; color: #999; margin-top: 4px;">注意：地址应以斜杠结尾，如 https://example.com/api/history/</div>
+                  </div>
+                  <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button class="btn-secondary" onclick="Business.testApiConnection()" style="flex: 1; padding: 8px;">测试连接</button>
+                    <button class="btn-secondary" onclick="Business.resetApiConfig()" style="flex: 1; padding: 8px;">重置默认</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 10px 20px; border-top: 1px solid #eee;">
@@ -95,6 +115,80 @@ export const profile = {
       `;
 
       document.body.appendChild(modal);
+      
+      // 应用深色模式设置
+      const darkModeToggle = document.getElementById('darkModeToggle');
+      if (darkModeToggle) {
+        const isDarkMode = Storage.get(Storage.KEYS.DARK_MODE, false);
+        darkModeToggle.checked = isDarkMode;
+        darkModeToggle.addEventListener('change', () => {
+          Storage.set(Storage.KEYS.DARK_MODE, darkModeToggle.checked);
+          location.reload();
+        });
+      }
+      
+      // 应用自动刷新设置
+      const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+      if (autoRefreshToggle) {
+        const autoRefresh = Storage.get(Storage.KEYS.AUTO_REFRESH, true);
+        autoRefreshToggle.checked = autoRefresh;
+        autoRefreshToggle.addEventListener('change', () => {
+          Storage.set(Storage.KEYS.AUTO_REFRESH, autoRefreshToggle.checked);
+        });
+      }
+      
+      // 应用声音提示设置
+      const soundToggle = document.getElementById('soundToggle');
+      if (soundToggle) {
+        const soundEnabled = Storage.get(Storage.KEYS.SOUND_ENABLED, false);
+        soundToggle.checked = soundEnabled;
+        soundToggle.addEventListener('change', () => {
+          Storage.set(Storage.KEYS.SOUND_ENABLED, soundToggle.checked);
+        });
+      }
+      
+      // 应用振动反馈设置
+      const vibrationToggle = document.getElementById('vibrationToggle');
+      if (vibrationToggle) {
+        const vibrationEnabled = Storage.get(Storage.KEYS.VIBRATION_ENABLED, false);
+        vibrationToggle.checked = vibrationEnabled;
+        vibrationToggle.addEventListener('change', () => {
+          Storage.set(Storage.KEYS.VIBRATION_ENABLED, vibrationToggle.checked);
+        });
+      }
+      
+      // 应用分析期数设置
+      const analyzeLimitSelect = document.getElementById('analyzeLimitSelect');
+      if (analyzeLimitSelect) {
+        const analyzeLimit = Storage.get(Storage.KEYS.ANALYZE_LIMIT, 50);
+        analyzeLimitSelect.value = analyzeLimit;
+        analyzeLimitSelect.addEventListener('change', () => {
+          Storage.set(Storage.KEYS.ANALYZE_LIMIT, analyzeLimitSelect.value);
+        });
+      }
+      
+      // 加载API配置
+      const latestApiInput = document.getElementById('latestApiInput');
+      const historyApiInput = document.getElementById('historyApiInput');
+      if (latestApiInput && historyApiInput) {
+        const customApiConfig = Storage.loadCustomApi();
+        if (customApiConfig) {
+          latestApiInput.value = customApiConfig.latest || '';
+          historyApiInput.value = customApiConfig.history || '';
+        } else {
+          // 显示默认值
+          latestApiInput.value = CONFIG.API.LATEST;
+          historyApiInput.value = CONFIG.API.HISTORY;
+        }
+      }
+      
+      // 保存设置按钮
+      const saveSettingsBtn = modal.querySelector('.save-settings-btn');
+      if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', () => {
+          Business.saveSettings();
+        });
+      }
 
       // 关闭模态框的点击事件
       modal.addEventListener('click', (e) => {
