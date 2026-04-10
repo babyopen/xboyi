@@ -186,88 +186,219 @@ export const prediction = {
       const periods = [10, 20, 30];
       const periodLabels = { 10: '10期', 20: '20期', 30: '30期' };
       
-      let periodsHtml = '';
+      // 数据缓存
+      const dataCache = {
+        lastUpdated: 0,
+        data: {}
+      };
       
-      periods.forEach(period => {
-        const data = analysisCalc.calcZodiacAnalysis(period);
-        if (!data) return;
-        
-        const score = data.zodiacScores ? data.zodiacScores[zodiac] : 0;
-        const details = data.zodiacDetails ? data.zodiacDetails[zodiac] : { cold: 0, hot: 0, shape: 0, interval: 0 };
-        const count = data.zodCount ? data.zodCount[zodiac] : 0;
-        const miss = data.zodMiss ? data.zodMiss[zodiac] : 0;
-        const avgMiss = data.zodAvgMiss ? data.zodAvgMiss[zodiac] : 0;
-        
-        let rank = '-';
-        if (data.sortedZodiacs) {
-          const idx = data.sortedZodiacs.findIndex(([z]) => z === zodiac);
-          if (idx !== -1) rank = `第${idx + 1}名`;
+      // 计算分析数据（带缓存）
+      const calculateData = (period) => {
+        const now = Date.now();
+        // 缓存有效期为10秒
+        if (dataCache.data[period] && (now - dataCache.lastUpdated) < 10000) {
+          return dataCache.data[period];
         }
         
-        periodsHtml += `
-          <div style="margin-bottom:16px;">
-            <div style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text);">${periodLabels[period]}分析</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:13px;color:var(--text);">排名</span>
-                  <span style="font-size:13px;font-weight:600;">${rank}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:13px;color:var(--text);">出现次数</span>
-                  <span style="font-size:13px;">${count}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:13px;color:var(--text);">遗漏次数</span>
-                  <span style="font-size:13px;">${miss}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:13px;color:var(--text);">平均遗漏</span>
-                  <span style="font-size:13px;">${avgMiss.toFixed(1)}</span>
+        const data = analysisCalc.calcZodiacAnalysis(period);
+        dataCache.data[period] = data;
+        dataCache.lastUpdated = now;
+        return data;
+      };
+      
+      // 转义特殊字符
+      const escapeHtml = (text) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      };
+
+      // 渲染弹窗内容（使用requestAnimationFrame优化）
+      const renderContent = (content, zodiac) => {
+        // 使用requestAnimationFrame优化DOM更新
+        requestAnimationFrame(() => {
+          let periodsHtml = '';
+          let overallScore = 0;
+          let periodCount = 0;
+          
+          periods.forEach(period => {
+            const data = calculateData(period);
+            if (!data) return;
+            
+            const score = data.zodiacScores ? data.zodiacScores[zodiac] : 0;
+            const details = data.zodiacDetails ? data.zodiacDetails[zodiac] : { cold: 0, hot: 0, shape: 0, interval: 0 };
+            const count = data.zodCount ? data.zodCount[zodiac] : 0;
+            const miss = data.zodMiss ? data.zodMiss[zodiac] : 0;
+            const avgMiss = data.zodAvgMiss ? data.zodAvgMiss[zodiac] : 0;
+            const percentage = data.total > 0 ? ((count / data.total) * 100).toFixed(2) : '0.00';
+            
+            let rank = '-';
+            if (data.sortedZodiacs) {
+              const idx = data.sortedZodiacs.findIndex(([z]) => z === zodiac);
+              if (idx !== -1) rank = `第${idx + 1}名`;
+            }
+            
+            // 计算总评分
+            overallScore += score;
+            periodCount++;
+            
+            periodsHtml += `
+              <div style="margin-bottom:16px;">
+                <div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#333;">${escapeHtml(periodLabels[period])}分析</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">排名</span>
+                      <span style="font-size:13px;font-weight:600;">${escapeHtml(rank)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">出现次数</span>
+                      <span style="font-size:13px;">${escapeHtml(count.toString())}次</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">遗漏次数</span>
+                      <span style="font-size:13px;">${escapeHtml(miss.toString())}期</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">平均遗漏</span>
+                      <span style="font-size:13px;">${escapeHtml(typeof avgMiss === 'number' ? avgMiss.toFixed(1) : '0')}期</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">占比</span>
+                      <span style="font-size:13px;">${escapeHtml(percentage)}%</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">综合评分</span>
+                      <span style="font-size:13px;font-weight:600;">${escapeHtml(score.toString())}分</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">冷号得分</span>
+                      <span style="font-size:13px;">${escapeHtml(details.cold.toString())}分</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">热号得分</span>
+                      <span style="font-size:13px;">${escapeHtml(details.hot.toString())}分</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">形态得分</span>
+                      <span style="font-size:13px;">${escapeHtml(details.shape.toString())}分</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:#666;">间隔得分</span>
+                      <span style="font-size:13px;">${escapeHtml(details.interval.toString())}分</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:13px;color:var(--text);">综合评分</span>
-                  <span style="font-size:13px;font-weight:600;">${score}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:13px;color:var(--text);">冷号</span>
-                  <span style="font-size:13px;">${details.cold}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:13px;color:var(--text);">热号</span>
-                  <span style="font-size:13px;">${details.hot}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:13px;color:var(--text);">间隔</span>
-                  <span style="font-size:13px;">${details.interval}</span>
-                </div>
+            `;
+          });
+          
+          // 计算平均评分
+          const averageScore = periodCount > 0 ? (overallScore / periodCount).toFixed(1) : '0.0';
+          
+          // 获取当前期号
+          const currentIssue = document.getElementById('curExpect')?.innerText || '2026100';
+          
+          // 使用文档片段减少DOM操作
+          const fragment = document.createDocumentFragment();
+          const newContent = document.createElement('div');
+          newContent.innerHTML = `
+            <div class="modal-header" style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+              <h3 class="modal-title" style="margin: 0; font-size: 18px; color: #333;">${escapeHtml(zodiac)} 详细评分 (第${escapeHtml(currentIssue)}期精选)</h3>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="refresh-btn" style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer;">刷新</button>
+                <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
               </div>
             </div>
-          </div>
-        `;
-      });
+            <div class="modal-body" style="padding: 20px;">
+              <div style="margin-bottom:20px;padding:12px;background:#f5f5f5;border-radius:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:14px;font-weight:600;color:#333;">综合平均评分</span>
+                  <span style="font-size:16px;font-weight:700;color:#007AFF;">${escapeHtml(averageScore)}分</span>
+                </div>
+              </div>
+              ${periodsHtml}
+            </div>
+          `;
+          
+          fragment.appendChild(newContent);
+          
+          // 清空并添加新内容
+          content.innerHTML = '';
+          content.appendChild(fragment);
+          
+          // 添加刷新按钮事件
+          const refreshBtn = content.querySelector('.refresh-btn');
+          if(refreshBtn) {
+            // 清除缓存
+            refreshBtn.addEventListener('click', () => {
+              dataCache.lastUpdated = 0;
+              renderContent(content, zodiac);
+            });
+          }
+        });
+      };
       
+      // 创建弹窗容器
       const modal = document.createElement('div');
       modal.className = 'modal-overlay';
       
-      modal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3 class="modal-title">${zodiac} 详细评分</h3>
-            <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
-          </div>
-          <div class="modal-body">
-            ${periodsHtml}
-          </div>
-        </div>
+      // 添加样式确保居中显示和遮罩效果
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+        backdrop-filter: blur(3px);
       `;
-      modal.addEventListener('click', (e) => {
-        if(e.target === modal) modal.remove();
-      });
       
+      // 创建弹窗内容
+      const content = document.createElement('div');
+      content.className = 'modal-content';
+      content.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        max-width: 90%;
+        max-height: 80%;
+        overflow-y: auto;
+        transform: scale(0.9);
+        transition: transform 0.3s ease-in-out;
+      `;
+      
+      // 渲染初始内容
+      renderContent(content, zodiac);
+      
+      // 组装弹窗
+      modal.appendChild(content);
       document.body.appendChild(modal);
+      
+      // 触发动画
+      setTimeout(() => {
+        modal.style.opacity = '1';
+        content.style.transform = 'scale(1)';
+      }, 10);
+      
+      // 点击模态框外部关闭
+      modal.addEventListener('click', (e) => {
+        if(e.target === modal) {
+          modal.style.opacity = '0';
+          content.style.transform = 'scale(0.9)';
+          setTimeout(() => {
+            modal.remove();
+          }, 300);
+        }
+      });
     } catch (e) {
       console.error('显示详细评分失败', e);
       Toast.show('显示详情失败');

@@ -148,6 +148,21 @@ export const Storage = {
   },
 
   /**
+   * 清除特定key的内存缓存
+   * @param {string} key - 存储key
+   */
+  clearCache: (key) => {
+    delete Storage._memoryCache[key];
+  },
+
+  /**
+   * 清除所有内存缓存
+   */
+  clearAllCache: () => {
+    Storage._memoryCache = {};
+  },
+
+  /**
    * 移除存储数据
    * @param {string} key - 存储key
    * @returns {boolean} 是否成功

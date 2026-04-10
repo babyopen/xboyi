@@ -1,5 +1,5 @@
 <!-- 
-  xboyi V1.0.11
+  xboyi V1.0.2
   代码结构说明：
   - CONFIG: 配置常量模块
   - Utils: 工具函数模块（节流、防抖、深拷贝等）
@@ -22,8 +22,10 @@
 <meta name="theme-color" content="#007AFF">
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="shortcut icon" href="favicon.png" type="image/png">
-<title>xboyi V1.0.11</title>
+<title>xboyi V1.0.2</title>
 <link rel="stylesheet" href="style.css">
+<!-- TensorFlow.js -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
 </head>
 <body>
 <!-- 加载遮罩 -->
@@ -37,7 +39,7 @@
     <div class="top-card">
       <div class="top-title">
         <span>符合条件：<span id="resultCount" aria-live="polite">0</span> 个</span>
-        <span>V1.0.11</span>
+        <span>V1.0.2</span>
       </div>
     <div id="resultNums" class="top-nums" role="list"></div>
   </div>
@@ -297,45 +299,142 @@
 
   <!-- 记录页面 -->
   <div class="page" id="recordPage" style="display:none">
-    <!-- 我的收藏区域 -->
-    <div class="record-section">
-      <div class="section-header">
+    <div class="card">
+      <div class="card-header">
         <h2>我的收藏</h2>
-        <button class="btn-mini" id="clearAllFavoritesBtn">清空全部</button>
+        <button class="btn-mini red" data-action="clearAllFavorites" aria-label="清空所有收藏">清空全部</button>
       </div>
-      <div id="favoriteList" class="favorite-list"></div>
-    </div>
- 
-    <!-- 预测统计卡片 -->
-    <div class="record-section">
-      <div class="section-header">
-        <h2>预测统计</h2>
-        <button class="btn-mini" id="refreshStatsBtn">刷新</button>
+      <div class="card-body">
+        <div id="favoriteList" class="filter-save-list" role="list"></div>
       </div>
-      <div id="predictionStatsContainer" class="prediction-stats"></div>
     </div>
- 
-    <!-- 精选生肖卡片（最新一条） -->
-    <div class="record-section">
-      <div class="section-header">
+    <div class="card">
+      <div class="card-header">
+        <h2>📊 预测统计</h2>
+        <button class="btn-mini" data-action="refreshPredictionStatistics" style="font-size:11px;">刷新</button>
+      </div>
+      <div class="card-body" id="predictionStatisticsBody">
+        <div style="text-align:center;color:var(--sub-text);padding:20px;">加载中...</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
         <h2>精选生肖</h2>
-        <button class="btn-mini" data-action="clearSelectedZodiac">清空</button>
-      </div>
-      <div id="latestSelectedZodiac"></div>
-    </div>
- 
-    <!-- 生肖预测历史 -->
-    <div class="record-section">
-      <div class="section-header">
-        <h2>生肖预测历史</h2>
-        <div class="history-actions">
-          <button class="btn-mini" data-action="selectHistory">选择</button>
-          <button class="btn-mini red" data-action="clearHistory">清空</button>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="btn-mini red" data-action="clearSelectedZodiacHistory" style="font-size:11px;">清空</button>
         </div>
       </div>
-      <div id="zodiacPredictionHistoryList" class="prediction-history-list"></div>
+      <div class="card-body">
+        <div id="selectedZodiacHistoryList">
+          <div class="empty-tip">暂无精选生肖历史</div>
+        </div>
+      </div>
     </div>
- 
+    <div class="card">
+      <div class="card-header">
+        <h2>🔮 生肖预测历史</h2>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="btn-mini" data-action="togglePredictionFiltersPanel" style="font-size:11px;">选择</button>
+          <button class="btn-mini red" data-action="clearZodiacPredictionHistory" style="font-size:11px;">清空</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="predictionFiltersPanel" class="filter-panel">
+          <div class="filter-panel-row">
+            <div class="filter-btn-group">
+              <button class="btn-mini prediction-period-btn active" data-period="10">10期</button>
+              <button class="btn-mini prediction-period-btn" data-period="20">20期</button>
+              <button class="btn-mini prediction-period-btn" data-period="30">30期</button>
+              <button class="btn-mini prediction-period-btn" data-period="all">全年</button>
+            </div>
+            <div class="filter-panel-buttons">
+              <button class="btn-mini" data-action="selectAllPredictionPeriods" style="font-size:11px;">全选</button>
+              <button class="btn-mini" data-action="resetPredictionPeriods" style="font-size:11px;">清空</button>
+              <button class="btn-mini" data-action="confirmPredictionFilters" style="background:var(--primary);color:#fff;">确认</button>
+            </div>
+          </div>
+        </div>
+        <div id="zodiacPredictionHistoryList">
+          <div class="empty-tip">暂无预测历史</div>
+        </div>
+        <div id="zodiacPredictionHistoryToggle" style="display:none;margin-top:8px;">
+          <button class="toggle-btn" data-action="toggleZodiacPredictionHistory" style="width:100%;">展开更多</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2>🤖 ML预测历史</h2>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="btn-mini" data-action="refreshMLPredictionHistory" style="font-size:11px;">刷新</button>
+          <button class="btn-mini red" data-action="clearMLPredictionHistory" style="font-size:11px;">清空</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="mlPredictionHistoryList">
+          <div class="empty-tip">暂无ML预测历史</div>
+        </div>
+        <div id="mlPredictionHistoryToggle" style="display:none;margin-top:8px;">
+          <button class="toggle-btn" data-action="toggleMLPredictionHistory" style="width:100%;">展开更多</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2>精选特码历史</h2>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <!-- 模式筛选按钮组 -->
+          <div class="mode-switch-btns" style="display:flex;gap:4px;margin-right:8px;">
+            <button class="btn-mini mode-btn special-history-mode-btn active" data-mode="all" data-action="switchSpecialHistoryMode" title="全部">全</button>
+            <button class="btn-mini mode-btn special-history-mode-btn" data-mode="hot" data-action="switchSpecialHistoryMode" title="🔥 热号模式">🔥</button>
+            <button class="btn-mini mode-btn special-history-mode-btn" data-mode="cold" data-action="switchSpecialHistoryMode" title="❄️ 冷号反弹">❄️</button>
+          </div>
+          <button class="btn-mini" data-action="toggleSpecialFiltersPanel" style="font-size:11px;">选择</button>
+          <button class="btn-mini red" data-action="clearSpecialHistory" aria-label="清空精选特码历史" style="font-size:11px;">清空</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="specialFiltersPanel" class="filter-panel">
+          <div class="filter-panel-row">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <div class="filter-btn-group">
+                <button class="btn-mini special-period-btn active" data-period="10">10期</button>
+                <button class="btn-mini special-period-btn" data-period="20">20期</button>
+                <button class="btn-mini special-period-btn" data-period="30">30期</button>
+                <button class="btn-mini special-period-btn" data-period="all">全年</button>
+              </div>
+              <div class="filter-btn-group">
+                <button class="btn-mini special-num-btn active" data-num="5">5个</button>
+                <button class="btn-mini special-num-btn" data-num="10">10个</button>
+                <button class="btn-mini special-num-btn" data-num="15">15个</button>
+                <button class="btn-mini special-num-btn" data-num="20">20个</button>
+              </div>
+            </div>
+            <div class="filter-panel-buttons">
+              <button class="btn-mini" data-action="confirmSpecialFilters" style="background:var(--primary);color:#fff;">确认</button>
+            </div>
+          </div>
+        </div>
+        <div id="specialHistoryList">
+          <div class="empty-tip">暂无精选特码历史</div>
+        </div>
+        <div id="specialHistoryPagination" class="pagination"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2>特码热门TOP5历史</h2>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="btn-mini red" data-action="clearHotNumbersHistory" style="font-size:11px;">清空</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="hotNumbersHistoryList">
+          <div class="empty-tip">暂无特码热门TOP5历史</div>
+        </div>
+        <div id="hotNumbersHistoryPagination" class="pagination"></div>
+      </div>
+    </div>
     <div class="disclaimer">仅供娱乐，非投注建议</div>
   </div>
 
@@ -421,7 +520,7 @@
       <div class="card-body">
         <div style="text-align:center; padding:20px 0;">
           <div style="font-size:18px; font-weight:600; margin-bottom:8px;">xboyi</div>
-          <div style="color:var(--sub-text); font-size:14px;">版本：V1.0.11</div>
+          <div style="color:var(--sub-text); font-size:14px;">版本：V1.0.2</div>
           <div style="color:var(--sub-text); font-size:12px; margin-top:16px;">仅供娱乐，非投注建议</div>
         </div>
       </div>
@@ -497,6 +596,19 @@
                 </button>
               </div>
               <div id="selectedZodiacsGrid" class="selected-zodiacs-grid"></div>
+            </div>
+
+            <!-- ML 神经网络预测 -->
+            <div class="selected-zodiacs" id="mlPredictionSection" style="display:none;">
+              <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>🤖 ML智能预测</span>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn-mini" id="trainModelBtn" title="训练模型" style="font-size:12px;padding:4px 10px;">训练</button>
+                  <button class="btn-mini" id="runMlPredictBtn" title="运行预测" style="font-size:12px;padding:4px 10px;">预测</button>
+                </div>
+              </div>
+              <div id="mlPredictionGrid" class="selected-zodiacs-grid"></div>
+              <div id="mlModelStatus" style="font-size:12px;color:var(--sub-text);padding:8px 0;">模型状态: 未训练</div>
             </div>
 
             <div class="core-conclusion">
