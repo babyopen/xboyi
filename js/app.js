@@ -300,7 +300,32 @@ if (!Business.toggleQuickNav) {
 if (!Business.silentSaveAllSpecialCombinations) {
   Business.silentSaveAllSpecialCombinations = () => {
     try {
-      console.log('后台静默保存精选特码组合');
+      // 获取精选特码数据
+      const state = StateManager._state;
+      const selected = state.selected || [];
+      
+      if (selected.length > 0) {
+        // 获取当前期号
+        let issue = '';
+        const conclusionTitle = document.querySelector('.conclusion-title');
+        if (conclusionTitle) {
+          const titleText = conclusionTitle.textContent || conclusionTitle.innerText;
+          const issueMatch = titleText.match(/第(\d+)期/);
+          if (issueMatch && issueMatch[1]) {
+            issue = issueMatch[1];
+          }
+        }
+        
+        if (issue) {
+          // 保存到历史记录
+          Storage.saveNumberRecord({
+            issue: issue,
+            numbers: selected,
+            recordType: 'special'
+          });
+          console.log('后台静默保存精选特码组合成功:', selected);
+        }
+      }
     } catch(e) {
       console.error('后台静默保存精选特码失败:', e);
     }
@@ -320,7 +345,42 @@ if (!Business.silentSaveAllSelectedZodiacs) {
 if (!Business.silentSaveHotNumbers) {
   Business.silentSaveHotNumbers = () => {
     try {
-      console.log('后台静默保存特码热门TOP5');
+      // 获取特码热门TOP5数据
+      const hotNumberEl = document.getElementById('zodiacFinalNumContent');
+      if(hotNumberEl) {
+        // 提取热门号码
+        const numbers = [];
+        const balls = hotNumberEl.querySelectorAll('.num-ball');
+        balls.forEach(ball => {
+          const num = ball.textContent.trim();
+          if (num && !isNaN(num)) {
+            numbers.push(parseInt(num));
+          }
+        });
+        
+        if (numbers.length > 0) {
+          // 获取当前期号
+          let issue = '';
+          const conclusionTitle = document.querySelector('.conclusion-title');
+          if (conclusionTitle) {
+            const titleText = conclusionTitle.textContent || conclusionTitle.innerText;
+            const issueMatch = titleText.match(/第(\d+)期/);
+            if (issueMatch && issueMatch[1]) {
+              issue = issueMatch[1];
+            }
+          }
+          
+          if (issue) {
+            // 保存到历史记录
+            Storage.saveHotNumbersRecord({
+              issue: issue,
+              numbers: numbers,
+              analyzeLimit: 10 // 默认分析10期数据
+            });
+            console.log('后台静默保存特码热门TOP5成功:', numbers);
+          }
+        }
+      }
     } catch(e) {
       console.error('后台静默保存特码热门TOP5失败:', e);
     }

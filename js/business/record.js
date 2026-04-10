@@ -433,6 +433,8 @@ export const record = {
         try {
           const dateStr = rec.createdAt ? new Date(rec.createdAt).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
           const zodiacs = Array.isArray(rec.predictions) ? rec.predictions : [];
+          const modelVersion = rec.modelVersion || '1.0';
+          const inputFeatures = rec.inputFeatures || '历史开奖数据';
           const item = document.createElement('div');
           item.className = 'history-item';
           item.innerHTML = `
@@ -440,6 +442,7 @@ export const record = {
             <div class="history-tags">
               ${zodiacs.map(z => `<div class="history-tag">${escapeHtml(z)}</div>`).join('')}
             </div>
+            <div class="history-meta" style="font-size: 12px; color: #999; margin-top: 5px;">模型版本: ${escapeHtml(modelVersion)} | 特征: ${escapeHtml(inputFeatures)}</div>
             <div class="history-time">${dateStr}</div>
           `;
           fragment.appendChild(item);
@@ -493,8 +496,8 @@ export const record = {
     
     try {
       // 清除缓存，确保获取最新数据
-      Storage.clearCache('specialNumberRecords');
-      const specialRecords = Storage.get('specialNumberRecords', []);
+      Storage.clearCache('numberRecords');
+      const specialRecords = Storage.get('numberRecords', []);
       
       if (!specialRecords.length) { 
         container.innerHTML = '<div class="empty-tip">暂无精选特码历史</div>'; 
@@ -529,7 +532,7 @@ export const record = {
   },
   clearSpecialHistory: () => {
     if (confirm('确定清空所有精选特码历史吗？')) {
-      Storage.set('specialNumberRecords', []);
+      Storage.set('numberRecords', []);
       record.renderSpecialHistory();
       Toast.show('已清空精选特码历史');
     }

@@ -492,6 +492,76 @@ export const Storage = {
   },
 
   /**
+   * 保存特码热门TOP5记录
+   * @param {Object} recordData - 特码热门TOP5记录对象
+   * @returns {boolean} 是否成功
+   */
+  saveHotNumbersRecord: (recordData) => {
+    try {
+      if (!recordData || !recordData.issue || !recordData.numbers) {
+        console.error('保存特码热门TOP5记录失败：数据不完整');
+        return false;
+      }
+
+      const records = Storage.get('hotNumbersRecords', []);
+      const existingIndex = records.findIndex(r => r.issue === recordData.issue);
+      
+      if (existingIndex >= 0) {
+        // 更新现有记录
+        records[existingIndex] = {
+          ...records[existingIndex],
+          ...recordData,
+          updatedAt: Date.now()
+        };
+      } else {
+        // 添加新记录
+        records.unshift({
+          ...recordData,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      }
+      
+      // 只保留最近50条记录
+      if (records.length > 50) {
+        records.splice(50);
+      }
+      
+      return Storage.set('hotNumbersRecords', records);
+    } catch (e) {
+      console.error('保存特码热门TOP5记录失败:', e);
+      return false;
+    }
+  },
+
+  /**
+   * 加载特码热门TOP5记录
+   * @returns {Array} 特码热门TOP5记录列表
+   */
+  loadHotNumbersRecords: () => {
+    try {
+      const records = Storage.get('hotNumbersRecords', []);
+      return Array.isArray(records) ? records : [];
+    } catch (e) {
+      console.error('加载特码热门TOP5记录失败:', e);
+      return [];
+    }
+  },
+
+  /**
+   * 清除所有特码热门TOP5记录
+   * @returns {boolean} 是否成功
+   */
+  clearHotNumbersRecords: () => {
+    try {
+      return Storage.set('hotNumbersRecords', []);
+    } catch (e) {
+      console.error('清除特码热门TOP5记录失败:', e);
+      return false;
+    }
+  },
+
+  /**
    * 保存自定义API配置
    * @param {Object} apiConfig - API配置对象
    * @param {string} apiConfig.latest - 最新开奖API地址

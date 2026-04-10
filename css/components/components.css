@@ -1039,13 +1039,66 @@ input[type="checkbox"]{
  } 
  
  /* 弹窗入场动画 */ 
- @keyframes ios-modal-in { 
-   from { 
-     opacity: 0; 
-     transform: scale(0.9) translateY(20px); 
-   } 
-   to { 
-     opacity: 1; 
-     transform: scale(1) translateY(0); 
-   } 
- }
+@keyframes ios-modal-in { 
+  from { 
+    opacity: 0; 
+    transform: scale(0.9) translateY(20px); 
+  } 
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  } 
+}
+
+/* 训练按钮状态样式 */
+#trainModelBtn.loading {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary);
+  cursor: not-allowed;
+}
+
+#trainModelBtn.trained {
+  background: var(--success);
+  color: #FFFFFF;
+  border-color: var(--success);
+  cursor: default;
+}
+
+/* 加载动画 */
+.loading-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #FFFFFF;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 训练状态文本样式 */
+#mlModelStatus {
+  transition: all var(--anim-fast);
+}
+
+#mlModelStatus.loading {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+#mlModelStatus.success {
+  color: var(--success);
+  font-weight: 500;
+}
+
+#mlModelStatus.error {
+  color: var(--danger);
+  font-weight: 500;
+}

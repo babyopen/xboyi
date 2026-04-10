@@ -4,6 +4,7 @@
  * @namespace Utils
  */
 import { CONFIG } from './config.js';
+import { DataQuery } from './data-query.js';
 
 export const Utils = {
   /**
@@ -556,14 +557,89 @@ export const Utils = {
     
     let html = '<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-top:16px;padding:12px;background:var(--bg);border-radius:8px;">';
     if(currentPage > 1) {
-      html += `<button class="btn-mini" onclick="Business.${pageFunc}(${currentPage - 1})")">上一页</button>`;
+      html += `<button class="btn-mini" onclick="Business.${pageFunc}(${currentPage - 1})">上一页</button>`;
     }
     html += `<span style="color:var(--sub-text);font-size:13px;">第 ${currentPage} / ${totalPages} 页 (共 ${totalItems} 条)</span>`;
     if(currentPage < totalPages) {
-      html += `<button class="btn-mini" onclick="Business.${pageFunc}(${currentPage + 1})")">下一页</button>`;
+      html += `<button class="btn-mini" onclick="Business.${pageFunc}(${currentPage + 1})">下一页</button>`;
     }
     html += '</div>';
     return html;
+  },
+
+  /**
+   * 批量更新DOM元素文本
+   * @param {Object} elements - 元素ID和值的映射
+   */
+  updateElements: (elements) => {
+    Object.entries(elements).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if(el) el.innerText = value;
+    });
+  },
+
+  /**
+   * 创建带缓存的数据计算函数
+   * @param {Function} calculateFn - 计算函数
+   * @param {number} cacheDuration - 缓存有效期（毫秒）
+   * @returns {Function} 带缓存的计算函数
+   */
+  createCachedFunction: (calculateFn, cacheDuration = 10000) => {
+    const cache = {
+      lastUpdated: 0,
+      data: null
+    };
+
+    return () => {
+      const now = Date.now();
+      if (cache.data && (now - cache.lastUpdated) < cacheDuration) {
+        return cache.data;
+      }
+
+      const data = calculateFn();
+      cache.data = data;
+      cache.lastUpdated = now;
+      return data;
+    };
+  },
+
+  /**
+   * 获取号码的颜色
+   * @param {number} num - 号码
+   * @returns {string} 颜色类名
+   */
+  getNumColor: (num) => {
+    if(CONFIG.COLOR_MAP['红'].includes(num)) return 'red';
+    if(CONFIG.COLOR_MAP['蓝'].includes(num)) return 'blue';
+    if(CONFIG.COLOR_MAP['绿'].includes(num)) return 'green';
+    return 'red';
+  },
+
+  /**
+   * 获取号码的五行
+   * @param {number} num - 号码
+   * @returns {string} 五行
+   */
+  getNumElement: (num) => {
+    if(CONFIG.ELEMENT_MAP['金'].includes(num)) return '金';
+    if(CONFIG.ELEMENT_MAP['木'].includes(num)) return '木';
+    if(CONFIG.ELEMENT_MAP['水'].includes(num)) return '水';
+    if(CONFIG.ELEMENT_MAP['火'].includes(num)) return '火';
+    if(CONFIG.ELEMENT_MAP['土'].includes(num)) return '土';
+    return '';
+  },
+
+  /**
+   * 构建完整的号码-生肖映射
+   * @returns {Map} 号码-生肖映射
+   */
+  buildNumZodiacMap: () => {
+    const map = new Map();
+    for(let num = 1; num <= 49; num++) {
+      const zod = DataQuery._getZodiacByNum(num);
+      if(zod) map.set(num, zod);
+    }
+    return map;
   },
 
   /**
