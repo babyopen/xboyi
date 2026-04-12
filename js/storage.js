@@ -274,7 +274,11 @@ export const Storage = {
       }
 
       const records = Storage.get(Storage.KEYS.ZODIAC_RECORDS, []);
-      const existingIndex = records.findIndex(r => r.issue === recordData.issue);
+      // 基于issue和recordType的组合来检查重复
+      const existingIndex = records.findIndex(r => 
+        r.issue === recordData.issue && 
+        r.recordType === recordData.recordType
+      );
       
       if (existingIndex >= 0) {
         // 更新现有记录

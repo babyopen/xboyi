@@ -259,7 +259,7 @@ export const mlPredict = {
   predict: async (historyData) => {
     if (!mlPredict.modelReady || !historyData || historyData.length < 10) {
       console.log('模型未就绪或数据不足，使用统计预测');
-      return mlPredict.statisticalPredict(historyData);
+      return await mlPredict.statisticalPredict(historyData);
     }
 
     try {
@@ -284,36 +284,64 @@ export const mlPredict = {
       return results.slice(0, 6);
     } catch (error) {
       console.error('ML预测失败:', error);
-      return mlPredict.statisticalPredict(historyData);
+      return await mlPredict.statisticalPredict(historyData);
     }
   },
 
   /**
-   * 统计预测（备选方案）
+   * 统计预测（备选方案）- 使用五维度评分算法
    * @param {Array} historyData - 历史数据
    * @returns {Array} 预测的生肖
    */
-  statisticalPredict: (historyData) => {
+  statisticalPredict: async (historyData) => {
     if (!historyData || historyData.length === 0) {
       return ZODIACS.slice(0, 6).map(z => ({ zodiac: z, probability: 0.5 }));
     }
 
-    const features = mlPredict.extractFeatures(historyData);
-    const results = ZODIACS.map(zodiac => {
-      const frequency = features.zodiacFrequency[zodiac] || 0;
-      const miss = features.zodiacMiss[zodiac] || 0;
-      const streak = features.zodiacStreak[zodiac] || 0;
+    try {
+      // ✅ 动态导入 analysisCalc 模块
+      const { analysisCalc } = await import('./analysis/modules/analysis-calc.js');
       
-      let score = frequency * 0.3 + miss * 0.3 + streak * 0.2;
-      if (features.recentZodiacs.includes(zodiac)) {
-        score += 0.2;
+      // 使用10期数据进行五维度评分
+      const periodData = analysisCalc.calcZodiacAnalysis(10);
+      
+      if (!periodData || !periodData.sortedZodiacs) {
+        // 如果分析失败，返回默认结果
+        return ZODIACS.slice(0, 6).map(z => ({ zodiac: z, probability: 0.5 }));
       }
+      
+      // ✅ 使用五维度评分算法（与生肖预测一致）
+      const continuous = analysisCalc.calcContinuousScores(periodData);
+      const sortedZodiacs = Object.entries(continuous.scores).sort((a, b) => b[1] - a[1]);
+      
+      // 转换为概率格式（分数/100）
+      const results = sortedZodiacs.map(([zod, score]) => ({
+        zodiac: zod,
+        probability: score / 100
+      }));
+      
+      console.log('[ML] 使用五维度评分算法:', results.slice(0, 6));
+      return results.slice(0, 6);
+    } catch (error) {
+      console.error('[ML] 五维度评分失败，使用默认统计:', error);
+      // 降级到简单统计
+      const features = mlPredict.extractFeatures(historyData);
+      const results = ZODIACS.map(zodiac => {
+        const frequency = features.zodiacFrequency[zodiac] || 0;
+        const miss = features.zodiacMiss[zodiac] || 0;
+        const streak = features.zodiacStreak[zodiac] || 0;
+        
+        let score = frequency * 0.3 + miss * 0.3 + streak * 0.2;
+        if (features.recentZodiacs.includes(zodiac)) {
+          score += 0.2;
+        }
 
-      return { zodiac, probability: score };
-    });
+        return { zodiac, probability: score };
+      });
 
-    results.sort((a, b) => b.probability - a.probability);
-    return results.slice(0, 6);
+      results.sort((a, b) => b.probability - a.probability);
+      return results.slice(0, 6);
+    }
   },
 
   /**
@@ -340,7 +368,7 @@ export const mlPredict = {
       return await mlPredict.predict(historyData);
     } catch (error) {
       console.error('获取预测失败:', error);
-      return mlPredict.statisticalPredict([]);
+      return await mlPredict.statisticalPredict([]);
     }
   }
 };

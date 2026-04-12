@@ -21,6 +21,13 @@ export const EventBinder = {
   _touchEndY: 0,
   _minSwipeDistance: 50, // 最小滑动距离
   _edgeSwipeWidth: 30,   // 边缘滑动检测宽度
+  
+  // 下拉刷新相关状态
+  _pullStartY: 0,
+  _pullCurrentY: 0,
+  _isPulling: false,
+  _pullThreshold: 80, // 触发刷新的阈值
+  _maxPullDistance: 150, // 最大下拉距离
 
   init: () => {
     // 全局点击事件委托
@@ -41,6 +48,22 @@ export const EventBinder = {
     // 添加触摸滑动事件监听（用于分析页面标签切换）
     document.addEventListener('touchstart', EventBinder.handleTouchStart, { passive: true });
     document.addEventListener('touchend', EventBinder.handleTouchEnd, { passive: true });
+    
+    // 添加下拉刷新事件监听
+    const pullContainer = document.getElementById('analysisPullContainer');
+    if(pullContainer) {
+      pullContainer.addEventListener('touchstart', EventBinder.handlePullStart, { passive: false });
+      pullContainer.addEventListener('touchmove', EventBinder.handlePullMove, { passive: false });
+      pullContainer.addEventListener('touchend', EventBinder.handlePullEnd, { passive: true });
+    }
+    
+    // 记录页面下拉刷新
+    const recordPullContainer = document.getElementById('recordPullContainer');
+    if(recordPullContainer) {
+      recordPullContainer.addEventListener('touchstart', EventBinder.handleRecordPullStart, { passive: false });
+      recordPullContainer.addEventListener('touchmove', EventBinder.handleRecordPullMove, { passive: false });
+      recordPullContainer.addEventListener('touchend', EventBinder.handleRecordPullEnd, { passive: true });
+    }
     
 
     
@@ -222,7 +245,6 @@ export const EventBinder = {
       if(action === 'copyHotNumbers') Business.copyHotNumbers();
       if(action === 'copyZodiacNumbers') Business.copyZodiacNumbers();
       if(action === 'copySelectedZodiacs') Business.copySelectedZodiacs();
-      if(action === 'saveZodiacPrediction') Business.saveZodiacPredictionToRecord();
       if(action === 'favoriteZodiacNumbers') Business.favoriteZodiacNumbers();
       if(action === 'saveNumberRecord') Business.saveNumberRecord();
       if(action === 'refreshHotCold') Business.refreshHotCold();
@@ -482,6 +504,235 @@ export const EventBinder = {
     else if(deltaX < 0 && startX > screenWidth - EventBinder._edgeSwipeWidth && currentIndex < tabs.length - 1) {
       Business.switchAnalysisTab(tabs[currentIndex + 1]);
     }
+  },
+  
+  /**
+   * 下拉刷新开始
+   * @param {TouchEvent} e - 触摸事件
+   */
+  handlePullStart: (e) => {
+    // 只有在页面顶部时才启用下拉刷新
+    if(window.scrollY > 0) return;
+    
+    EventBinder._pullStartY = e.touches[0].clientY;
+    EventBinder._isPulling = true;
+  },
+  
+  /**
+   * 下拉刷新移动
+   * @param {TouchEvent} e - 触摸事件
+   */
+  handlePullMove: (e) => {
+    if(!EventBinder._isPulling) return;
+    
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - EventBinder._pullStartY;
+    
+    // 只处理向下拉动的情况
+    if(deltaY <= 0) return;
+    
+    // 阻止默认滚动行为
+    e.preventDefault();
+    
+    EventBinder._pullCurrentY = deltaY;
+    
+    // 计算下拉距离（带阻力效果）
+    const pullDistance = Math.min(deltaY * 0.5, EventBinder._maxPullDistance);
+    
+    // 更新指示器位置和状态
+    const indicator = document.getElementById('pullRefreshIndicator');
+    const container = document.getElementById('analysisPullContainer');
+    const text = document.getElementById('pullRefreshText');
+    
+    if(indicator && container && text) {
+      // 显示指示器
+      indicator.classList.add('visible');
+      
+      // 设置指示器位置
+      indicator.style.top = `${-50 + pullDistance}px`;
+      
+      // 根据拉动距离更新文本
+      if(pullDistance >= EventBinder._pullThreshold) {
+        text.textContent = '释放刷新';
+        indicator.classList.add('refreshing');
+      } else {
+        text.textContent = '下拉刷新';
+        indicator.classList.remove('refreshing');
+      }
+      
+      // 给容器添加拉动效果
+      container.classList.add('pulling');
+      container.style.transform = `translateY(${pullDistance * 0.3}px)`;
+    }
+  },
+  
+  /**
+   * 下拉刷新结束
+   * @param {TouchEvent} e - 触摸事件
+   */
+  handlePullEnd: (e) => {
+    if(!EventBinder._isPulling) return;
+    
+    EventBinder._isPulling = false;
+    
+    const indicator = document.getElementById('pullRefreshIndicator');
+    const container = document.getElementById('analysisPullContainer');
+    const text = document.getElementById('pullRefreshText');
+    
+    if(indicator && container && text) {
+      // 移除拉动效果
+      container.classList.remove('pulling');
+      container.style.transform = '';
+      
+      // 检查是否达到刷新阈值
+      if(EventBinder._pullCurrentY >= EventBinder._pullThreshold) {
+        // 执行刷新
+        text.textContent = '刷新中...';
+        indicator.style.top = '-20px';
+        
+        // 调用刷新函数
+        setTimeout(() => {
+          Business.refreshHistory(true); // 静默模式
+          
+          // 刷新完成后隐藏指示器
+          setTimeout(() => {
+            indicator.classList.remove('visible', 'refreshing');
+            indicator.style.top = '-50px';
+            text.textContent = '下拉刷新';
+          }, 500);
+        }, 300);
+      } else {
+        // 未达到阈值，隐藏指示器
+        indicator.classList.remove('visible', 'refreshing');
+        indicator.style.top = '-50px';
+        text.textContent = '下拉刷新';
+      }
+    }
+    
+    // 重置状态
+    EventBinder._pullCurrentY = 0;
+  },
+  
+  /**
+   * 记录页面下拉刷新开始
+   * @param {TouchEvent} e - 触摸事件
+   */
+  handleRecordPullStart: (e) => {
+    // 只有在页面顶部时才启用下拉刷新
+    if(window.scrollY > 0) return;
+    
+    EventBinder._pullStartY = e.touches[0].clientY;
+    EventBinder._isPulling = true;
+  },
+  
+  /**
+   * 记录页面下拉刷新移动
+   * @param {TouchEvent} e - 触摸事件
+   */
+  handleRecordPullMove: (e) => {
+    if(!EventBinder._isPulling) return;
+    
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - EventBinder._pullStartY;
+    
+    // 只处理向下拉动的情况
+    if(deltaY <= 0) return;
+    
+    // 阻止默认滚动行为
+    e.preventDefault();
+    
+    EventBinder._pullCurrentY = deltaY;
+    
+    // 计算下拉距离（带阻力效果）
+    const pullDistance = Math.min(deltaY * 0.5, EventBinder._maxPullDistance);
+    
+    // 更新指示器位置和状态
+    const indicator = document.getElementById('recordPullRefreshIndicator');
+    const container = document.getElementById('recordPullContainer');
+    const text = document.getElementById('recordPullRefreshText');
+    
+    if(indicator && container && text) {
+      // 显示指示器
+      indicator.classList.add('visible');
+      
+      // 设置指示器位置
+      indicator.style.top = `${-50 + pullDistance}px`;
+      
+      // 根据拉动距离更新文本
+      if(pullDistance >= EventBinder._pullThreshold) {
+        text.textContent = '释放刷新';
+        indicator.classList.add('refreshing');
+      } else {
+        text.textContent = '下拉刷新';
+        indicator.classList.remove('refreshing');
+      }
+      
+      // 给容器添加拉动效果
+      container.classList.add('pulling');
+      container.style.transform = `translateY(${pullDistance * 0.3}px)`;
+    }
+  },
+  
+  /**
+   * 记录页面下拉刷新结束
+   * @param {TouchEvent} e - 触摸事件
+   */
+  handleRecordPullEnd: (e) => {
+    if(!EventBinder._isPulling) return;
+    
+    EventBinder._isPulling = false;
+    
+    const indicator = document.getElementById('recordPullRefreshIndicator');
+    const container = document.getElementById('recordPullContainer');
+    const text = document.getElementById('recordPullRefreshText');
+    
+    if(indicator && container && text) {
+      // 移除拉动效果
+      container.classList.remove('pulling');
+      container.style.transform = '';
+      
+      // 检查是否达到刷新阈值
+      if(EventBinder._pullCurrentY >= EventBinder._pullThreshold) {
+        // 执行刷新
+        text.textContent = '刷新中...';
+        indicator.style.top = '-20px';
+        
+        // 调用刷新函数
+        setTimeout(() => {
+          // 导入record模块并刷新
+          import('./business/record.js').then(({ record }) => {
+            const success = record.refreshAll();
+            
+            // 刷新完成后隐藏指示器
+            setTimeout(() => {
+              indicator.classList.remove('visible', 'refreshing');
+              indicator.style.top = '-50px';
+              text.textContent = '下拉刷新';
+              
+              if(success) {
+                Toast.show('数据已刷新', 1500);
+              } else {
+                Toast.show('刷新失败，请重试', 2000);
+              }
+            }, 500);
+          }).catch(error => {
+            console.error('加载record模块失败:', error);
+            indicator.classList.remove('visible', 'refreshing');
+            indicator.style.top = '-50px';
+            text.textContent = '下拉刷新';
+            Toast.show('刷新失败，请重试', 2000);
+          });
+        }, 300);
+      } else {
+        // 未达到阈值，隐藏指示器
+        indicator.classList.remove('visible', 'refreshing');
+        indicator.style.top = '-50px';
+        text.textContent = '下拉刷新';
+      }
+    }
+    
+    // 重置状态
+    EventBinder._pullCurrentY = 0;
   }
 };
 

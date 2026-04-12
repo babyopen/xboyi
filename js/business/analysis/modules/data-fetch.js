@@ -252,8 +252,6 @@ export const dataFetch = {
         prediction.updateSpecialHistoryComparison();
         // 重新渲染精选特码历史以显示最新比较结果
         prediction.renderSpecialHistory();
-        // 自动保存精选生肖到记录页面
-        prediction.saveSelectedZodiacsToRecord();
       });
       
       if(!silent) Toast.show('数据加载成功');

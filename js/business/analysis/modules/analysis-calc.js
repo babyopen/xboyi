@@ -817,74 +817,130 @@ export const analysisCalc = {
   },
 
   /** 
-  * 连续线性评分方案（排名1→35分，排名12→0分） 
+  * 【优化版】多维度综合评分方案 - 基于全维度数据分析
   * @param {Object} data - calcZodiacAnalysis 返回的数据对象 
-  * @returns {Object} { scores: {生肖: 总分}, details: {生肖: {base, shape, interval, total, rank, status}} } 
+  * @returns {Object} { scores: {生肖: 总分}, details: {生肖: {base, shape, interval, trend, momentum, total, rank, status}} } 
   */ 
  calcContinuousScores: (data) => { 
      if (!data || !data.list || data.list.length === 0) { 
          return { scores: {}, details: {} }; 
      } 
-
+ 
      const zodiacOrder = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']; 
      const list = data.list; 
      const lastZodiac = list.length > 0 ? analysisCalc.getSpecial(list[0]).zod : ''; 
-
-     // ---------- 1. 计算每个生肖的遗漏期数（越小越热）---------- 
+     const totalPeriods = list.length;
+ 
+     // ========== 1. 基础热度分（30分）- 基于遗漏期数的非线性映射 ==========
      const zodiacMiss = {}; 
-     zodiacOrder.forEach(z => { zodiacMiss[z] = list.length; }); 
+     zodiacOrder.forEach(z => { zodiacMiss[z] = totalPeriods; }); 
      list.forEach((item, idx) => { 
          const s = analysisCalc.getSpecial(item); 
-         if (zodiacMiss[s.zod] === list.length) { 
+         if (zodiacMiss[s.zod] === totalPeriods) { 
              zodiacMiss[s.zod] = idx; 
          } 
-     }); 
-
-     // ---------- 2. 按遗漏期数排序（升序）---------- 
-     const sortedByMiss = zodiacOrder.slice().sort((a, b) => zodiacMiss[a] - zodiacMiss[b]); 
-     const total = zodiacOrder.length; // 12 
-
-     // ---------- 3. 线性映射基础分：第1名35分，第12名0分 ---------- 
+     });
+ 
+     // 计算平均遗漏和标准差，用于动态阈值
+     const missValues = Object.values(zodiacMiss);
+     const avgMiss = missValues.reduce((a, b) => a + b, 0) / missValues.length;
+     const maxMiss = Math.max(...missValues);
+     const minMiss = Math.min(...missValues);
+ 
      const baseScores = {}; 
-     sortedByMiss.forEach((zod, idx) => { 
-         // 排名 idx 从0开始，第1名 idx=0 → 得分35，第12名 idx=11 → 得分0 
-         const score = 35 * (total - 1 - idx) / (total - 1); 
-         baseScores[zod] = Math.round(score); // 四舍五入取整 
-     }); 
+     zodiacOrder.forEach(z => {
+         const miss = zodiacMiss[z];
+         let score = 0;
+          
+         // 使用S型曲线映射：近期出现(0-3期)得高分，长期遗漏(>20期)也得中等分
+         if (miss <= 2) {
+             // 极热状态：25-30分
+             score = 30 - (miss * 2.5);
+         } else if (miss <= 6) {
+             // 温热状态：18-25分
+             score = 25 - ((miss - 2) * 1.75);
+         } else if (miss <= 12) {
+             // 温和状态：10-18分
+             score = 18 - ((miss - 6) * 1.33);
+         } else if (miss <= 20) {
+             // 偏冷状态：4-10分
+             score = 10 - ((miss - 12) * 0.75);
+         } else {
+             // 极冷反弹潜力：2-4分
+             score = Math.max(2, 4 - ((miss - 20) * 0.25));
+         }
+          
+         baseScores[z] = Math.round(score);
+     });
 
-     // ---------- 4. 形态分（均衡型：5+3+4+3=15）---------- 
-     // 4.1 计算最近10期的热门单双和大小
-     const recent10 = list.slice(0, Math.min(10, list.length));
+     // ========== 2. 形态共振分（20分）- 多维度形态匹配 ==========
+     // 2.1 单双大小形态分析（最近15期）
+     const recent15 = list.slice(0, Math.min(15, list.length));
      let oddCount = 0, evenCount = 0, bigCount = 0, smallCount = 0;
-     recent10.forEach(item => {
+     recent15.forEach(item => {
        const s = analysisCalc.getSpecial(item);
        if (s.odd) oddCount++; else evenCount++;
        if (s.big) bigCount++; else smallCount++;
      });
      const hotOddEven = oddCount > evenCount ? '单' : '双';
      const hotBigSmall = bigCount > smallCount ? '大' : '小';
+     const oddRatio = oddCount / recent15.length;
+     const bigRatio = bigCount / recent15.length;
 
-     // 4.2 每个生肖对应的单双、大小（取多数属性）
-     const zodiacOddEven = {}, zodiacBigSmall = {};
+     // 2.2 波色趋势分析（最近20期）
+     const recent20 = list.slice(0, Math.min(20, list.length));
+     const colorStats = { '红': 0, '蓝': 0, '绿': 0 };
+     recent20.forEach(item => {
+       const s = analysisCalc.getSpecial(item);
+       if (colorStats.hasOwnProperty(s.colorName)) {
+         colorStats[s.colorName]++;
+       }
+     });
+     const hotColor = Object.entries(colorStats).sort((a, b) => b[1] - a[1])[0][0];
+
+     // 2.3 五行趋势分析
+     const elementStats = { '金': 0, '木': 0, '水': 0, '火': 0, '土': 0 };
+     recent20.forEach(item => {
+       const s = analysisCalc.getSpecial(item);
+       if (elementStats.hasOwnProperty(s.wuxing)) {
+         elementStats[s.wuxing]++;
+       }
+     });
+     const hotElement = Object.entries(elementStats).sort((a, b) => b[1] - a[1])[0][0];
+
+     // 2.4 每个生肖的属性映射
+     const zodiacAttributes = {};
      zodiacOrder.forEach(z => {
        const nums = analysisCalc.getZodiacNumbers(z);
        let oddCnt = 0, bigCnt = 0;
+       const colorCnt = { '红': 0, '蓝': 0, '绿': 0 };
+       const elementCnt = { '金': 0, '木': 0, '水': 0, '火': 0, '土': 0 };
+       
        nums.forEach(num => {
          if (num % 2 === 1) oddCnt++;
          if (num >= 25) bigCnt++;
+         const color = analysisCalc.getColorName(num);
+         if (colorCnt.hasOwnProperty(color)) colorCnt[color]++;
+         const element = analysisCalc.getWuxing(num);
+         if (elementCnt.hasOwnProperty(element)) elementCnt[element]++;
        });
-       zodiacOddEven[z] = oddCnt > nums.length/2 ? '单' : '双';
-       zodiacBigSmall[z] = bigCnt > nums.length/2 ? '大' : '小';
+       
+       zodiacAttributes[z] = {
+         oddEven: oddCnt > nums.length/2 ? '单' : '双',
+         bigSmall: bigCnt > nums.length/2 ? '大' : '小',
+         dominantColor: Object.entries(colorCnt).sort((a, b) => b[1] - a[1])[0][0],
+         dominantElement: Object.entries(elementCnt).sort((a, b) => b[1] - a[1])[0][0]
+       };
      });
 
-     // 4.3 上期尾数→生肖映射
+     // 2.5 上期尾数关联
      const tailToZodiacMap = {
        0: ['鼠','猪'], 1: ['牛','狗'], 2: ['虎','鸡'], 3: ['兔','猴'],
        4: ['龙','羊'], 5: ['蛇','马'], 6: ['马','蛇'], 7: ['羊','龙'],
        8: ['猴','兔'], 9: ['鸡','虎']
      };
 
-     // 4.4 连出/遗漏：最近5期出现≥2次 或 遗漏≥15期
+     // 2.6 连出/遗漏形态
      const recent5 = list.slice(0, 5);
      const recent5Count = {};
      zodiacOrder.forEach(z => { recent5Count[z] = 0; });
@@ -893,26 +949,42 @@ export const analysisCalc = {
        recent5Count[s.zod]++;
      });
 
-     // 4.5 五行相生
+     // 2.7 五行相生相克关系
      const elementGenerate = {
        '金': ['水'], '水': ['木'], '木': ['火'], '火': ['土'], '土': ['金']
+     };
+     const elementOvercome = {
+       '金': ['木'], '木': ['土'], '土': ['水'], '水': ['火'], '火': ['金']
      };
      const zodiacElement = {
        '鼠': '水', '牛': '土', '虎': '木', '兔': '木', '龙': '土', '蛇': '火',
        '马': '火', '羊': '土', '猴': '金', '鸡': '金', '狗': '土', '猪': '水'
      };
 
-     // 4.6 计算形态分
+     // 2.8 计算形态分
      const shapeScores = {};
      zodiacOrder.forEach(z => {
        let score = 0;
+       const attrs = zodiacAttributes[z];
 
-       // 维度1：热门形态共振（5分）
-       if (zodiacOddEven[z] === hotOddEven && zodiacBigSmall[z] === hotBigSmall) {
-         score += 5;
+       // 维度1：单双大小共振（6分）- 根据热门程度加权
+       if (attrs.oddEven === hotOddEven && attrs.bigSmall === hotBigSmall) {
+         // 如果该形态占比超过60%，给予更高分数
+         const ratio = hotOddEven === '单' ? oddRatio : (1 - oddRatio);
+         const bigRatioVal = hotBigSmall === '大' ? bigRatio : (1 - bigRatio);
+         const avgRatio = (ratio + bigRatioVal) / 2;
+         score += Math.round(4 + avgRatio * 2);
+       } else if (attrs.oddEven === hotOddEven || attrs.bigSmall === hotBigSmall) {
+         score += 2;
        }
 
-       // 维度2：上期尾数关联（3分）
+       // 维度2：波色匹配（4分）
+       if (attrs.dominantColor === hotColor) {
+         const colorRatio = colorStats[hotColor] / recent20.length;
+         score += Math.round(2 + colorRatio * 2);
+       }
+
+       // 维度3：上期尾数关联（3分）
        const lastItem = list[0];
        const lastSpecial = lastItem ? analysisCalc.getSpecial(lastItem) : null;
        const lastTail = lastSpecial ? lastSpecial.tail : -1;
@@ -920,31 +992,41 @@ export const analysisCalc = {
          score += 3;
        }
 
-       // 维度3：连出/遗漏形态（4分）
+       // 维度4：连出/遗漏形态（3分）
        const miss = zodiacMiss[z];
        const isStreak = recent5Count[z] >= 2;
        const isHighMiss = miss >= 15;
-       if (isStreak || isHighMiss) {
-         score += 4;
+       if (isStreak) {
+         score += 3; // 连出加分
+       } else if (isHighMiss) {
+         score += 2; // 高遗漏反弹潜力
        }
 
-       // 维度4：五行相生（3分）
+       // 维度5：五行关系（4分）- 相生>相同>相克
        if (lastZodiac && zodiacElement[lastZodiac] && zodiacElement[z]) {
          const lastEl = zodiacElement[lastZodiac];
          const curEl = zodiacElement[z];
+         
+         if (curEl === hotElement) {
+           score += 2; // 当前五行是热门五行
+         }
+         
          if (elementGenerate[lastEl] && elementGenerate[lastEl].includes(curEl)) {
-           score += 3;
+           score += 2; // 相生关系
+         } else if (lastEl === curEl) {
+           score += 1; // 相同五行
          }
        }
 
-       shapeScores[z] = Math.min(score, 15);
+       shapeScores[z] = Math.min(score, 20);
      }); 
 
-     // ---------- 5. 间隔分（间隔规律，20分）---------- 
-     // 计算最近30期内出现最多的间隔偏移量（-5 到 +5） 
+     // ========== 3. 间隔规律分（20分）- 增强版 ==========
      const intervalStats = {}; 
-     for (let i = 0; i < 12; i++) intervalStats[i] = 0; 
-     const recentList = list.slice(0, Math.min(30, list.length)); 
+     for (let i = 0; i < 13; i++) intervalStats[i] = 0; 
+     const recentList = list.slice(0, Math.min(50, list.length)); 
+     
+     // 统计所有间隔模式
      for (let i = 1; i < recentList.length; i++) { 
          const preZod = analysisCalc.getSpecial(recentList[i-1]).zod; 
          const curZod = analysisCalc.getSpecial(recentList[i]).zod; 
@@ -957,10 +1039,15 @@ export const analysisCalc = {
              intervalStats[diff + 6]++; 
          } 
      } 
+     
+     // 获取前5个常见间隔（增加容错）
      const commonIntervals = Object.entries(intervalStats) 
          .sort((a,b) => b[1] - a[1]) 
-         .slice(0, 3) 
-         .map(x => parseInt(x[0]) - 6); 
+         .slice(0, 5) 
+         .map(x => ({ diff: parseInt(x[0]) - 6, count: x[1] }));
+     
+     const maxIntervalCount = commonIntervals.length > 0 ? commonIntervals[0].count : 1;
+     
      const intervalScores = {}; 
      if (lastZodiac) { 
          const lastIdx = zodiacOrder.indexOf(lastZodiac); 
@@ -969,38 +1056,108 @@ export const analysisCalc = {
              let diff = curIdx - lastIdx; 
              if (diff > 6) diff -= 12; 
              if (diff < -6) diff += 12; 
-             intervalScores[z] = commonIntervals.includes(diff) ? 20 : 0; 
+             
+             // 查找匹配的间隔
+             const matched = commonIntervals.find(ci => ci.diff === diff);
+             if (matched) {
+                 // 根据出现频率给予不同分数
+                 const frequency = matched.count / maxIntervalCount;
+                 intervalScores[z] = Math.round(10 + frequency * 10);
+             } else {
+                 intervalScores[z] = 0;
+             }
          }); 
      } else { 
          zodiacOrder.forEach(z => { intervalScores[z] = 0; }); 
      } 
 
-     // ---------- 6. 合并总分及详情 ---------- 
+     // ========== 4. 趋势动量分（15分）- 新增维度 ==========
+     const trendScores = {};
+     const momentumScores = {};
+      
+     zodiacOrder.forEach(z => {
+       let trendScore = 0;
+       let momentumScore = 0;
+        
+       // 4.1 短期趋势（最近10期 vs 之前10期）
+       const recent10 = list.slice(0, Math.min(10, list.length));
+       const prev10 = list.slice(10, Math.min(20, list.length));
+        
+       const recentCount = recent10.filter(item => {
+         const s = analysisCalc.getSpecial(item);
+         return s.zod === z;
+       }).length;
+        
+       const prevCount = prev10.filter(item => {
+         const s = analysisCalc.getSpecial(item);
+         return s.zod === z;
+       }).length;
+        
+       // 上升趋势加分
+       if (recentCount > prevCount) {
+         trendScore = Math.min(8, (recentCount - prevCount) * 4);
+       } else if (recentCount < prevCount) {
+         // 下降趋势减分
+         trendScore = Math.max(-4, (recentCount - prevCount) * 2);
+       }
+        
+       // 4.2 动量指标（最近3期是否有出现）
+       const recent3 = list.slice(0, Math.min(3, list.length));
+       const hasRecent = recent3.some(item => {
+         const s = analysisCalc.getSpecial(item);
+         return s.zod === z;
+       });
+        
+       if (hasRecent) {
+         momentumScore = 7; // 近期有出现，动量强
+       } else if (zodiacMiss[z] <= 7) {
+         momentumScore = 4; // 7期内出现过
+       } else {
+         momentumScore = 2; // 较久未出现
+       }
+        
+       trendScores[z] = Math.max(0, trendScore);
+       momentumScores[z] = momentumScore;
+     });
+ 
+     // ========== 5. 合并总分及详情 ==========
      const scores = {}; 
      const details = {}; 
+     const allScores = [];
+      
      zodiacOrder.forEach(z => { 
          const base = baseScores[z]; 
          const shape = shapeScores[z]; 
          const interval = intervalScores[z]; 
-         const totalScore = base + shape + interval; 
-         scores[z] = totalScore; 
-         
-         // 根据基础分给出辅助状态文字（仅用于显示，不影响分数） 
+         const trend = trendScores[z];
+         const momentum = momentumScores[z];
+          
+         // 总分 = 基础分(30) + 形态分(20) + 间隔分(20) + 趋势分(15) + 动量分(15)
+         const totalScore = base + shape + interval + trend + momentum;
+         scores[z] = totalScore;
+         allScores.push({ zodiac: z, score: totalScore });
+          
+         // 根据基础分给出辅助状态文字
          let status = ''; 
-         if (base >= 26) status = '热'; 
-         else if (base >= 10) status = '温'; 
+         if (base >= 24) status = '热'; 
+         else if (base >= 14) status = '温'; 
          else status = '冷'; 
-         
+          
          details[z] = { 
              base: base, 
              shape: shape, 
-             interval: interval, 
+             interval: interval,
+             trend: trend,
+             momentum: momentum,
              total: totalScore, 
-             rank: sortedByMiss.indexOf(z) + 1, 
              status: status 
          }; 
-     }); 
-
+     });
+      
+     // 按总分排序
+     allScores.sort((a, b) => b.score - a.score);
+     const sortedByMiss = allScores.map(item => item.zodiac);
+ 
      return { scores, details }; 
  },
 

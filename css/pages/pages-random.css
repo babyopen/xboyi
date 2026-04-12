@@ -63,10 +63,6 @@
 
 .history-item{
   padding:16px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
   border-bottom:1px solid var(--border);
 }
 
@@ -76,11 +72,19 @@
 
 .history-nums{
   font-weight:600;
+  display: inline-block;
 }
 
 .history-time{
   font-size:12px;
   color:var(--sub-text);
+}
+
+/* 历史记录标题行 */
+.history-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .history-btns{

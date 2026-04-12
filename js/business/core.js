@@ -844,6 +844,15 @@ export const core = {
     if(bottomNav) {
       bottomNav.classList.toggle('needs-space', index === 0 || index === 1);
     }
+    
+    // 切换到记录页面时，重新渲染所有数据
+    if (index === 2) {
+      import('./record.js').then(({ record }) => {
+        record.renderAll();
+      }).catch(error => {
+        console.error('加载record模块失败:', error);
+      });
+    }
   },
 
   /**

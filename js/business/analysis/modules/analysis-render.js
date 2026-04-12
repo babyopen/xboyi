@@ -9,6 +9,7 @@ import { Toast } from '../../../toast.js';
 import { DataQuery } from '../../../data-query.js';
 import { IssueManager } from '../../issue-manager.js';
 import { Utils } from '../../../utils.js';
+import { Storage } from '../../../storage.js';
 
 /**
  * 导入工具函数
@@ -360,11 +361,13 @@ export const analysisRender = {
                 else if (idx === 1) topClass = 'top-2';
                 else if (idx === 2) topClass = 'top-3';
 
-                // 生成标签（显示基础分、形态分、间隔分）
+                // 生成标签（显示基础分、形态分、间隔分、趋势分、动量分）
                 const tags = [];
                 if (det.base > 0) tags.push(`${det.status}${det.base}`);
                 if (det.shape > 0) tags.push(`形${det.shape}`);
                 if (det.interval > 0) tags.push(`间${det.interval}`);
+                if (det.trend > 0) tags.push(`趋${det.trend}`);
+                if (det.momentum > 0) tags.push(`动${det.momentum}`);
 
                 predictionHtml += `
                     <div class="zodiac-prediction-item ${topClass}" data-zodiac="${zod}">
@@ -379,6 +382,13 @@ export const analysisRender = {
               zodiacPredictionGrid.innerHTML = predictionHtml;
               
               // 生肖预测历史功能已移除
+              
+              // 自动保存生肖预测到记录页面（使用最新的连续评分数据）
+              const updatedData = {
+                ...data,
+                sortedZodiacs: sortedZodiacs
+              };
+              analysisRender.autoSaveZodiacPrediction(updatedData);
             } else {
               zodiacPredictionGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--sub-text);">暂无预测数据</div>';
             }
@@ -391,31 +401,24 @@ export const analysisRender = {
         // 精选生肖
         const selectedZodiacsGrid = document.getElementById('selectedZodiacsGrid');
         if(selectedZodiacsGrid) {
-          // 动态导入 prediction.js 以避免循环依赖
           import('../../prediction.js').then(({ prediction }) => {
             try {
-              const selectedZodiacsMap = prediction.getSelectedZodiacs();
+              const zodiacMap = prediction.getSelectedZodiacs();
               
-              // 渲染精选生肖
-              if(selectedZodiacsMap.size > 0) {
+              if(zodiacMap.size > 0) {
                 let selectedHtml = '';
-                selectedZodiacsMap.forEach((periods, zod) => {
-                  // 生成期数标签（将10期、20期、30期映射为1、2、3）
-                  const periodTags = periods.map(period => {
-                    const periodMap = {
-                      10: '1',
-                      20: '2',
-                      30: '3'
-                    };
-                    return `
-                      <span class="selected-zodiac-period-tag">${periodMap[period] || period}</span>
-                    `;
-                  }).join('');
+                let index = 0;
+                zodiacMap.forEach((periods, zod) => {
+                  index++;
+                  let periodsHtml = '';
+                  periods.forEach(period => {
+                    periodsHtml += `<span class="selected-zodiac-period-tag">${period}</span>`;
+                  });
                   
                   selectedHtml += `
                     <div class="selected-zodiac-item" data-zodiac="${zod}">
                       <div class="zodiac-periods">
-                        ${periodTags}
+                        ${periodsHtml}
                       </div>
                       <div class="zodiac-name">${zod}</div>
                     </div>
@@ -423,17 +426,15 @@ export const analysisRender = {
                 });
                 selectedZodiacsGrid.innerHTML = selectedHtml;
                 
-                // 使用事件委托处理点击事件
                 selectedZodiacsGrid.onclick = (e) => {
                   const item = e.target.closest('.selected-zodiac-item');
                   if (item) {
-                    const zodiac = item.dataset.zodiac;
-                    prediction.showSelectedZodiacRatingDetail(zodiac);
+                    prediction.showSelectedZodiacRatingDetail(item.dataset.zodiac);
                   }
                 };
                 
-                // 保存精选生肖到记录页面
-                prediction.saveSelectedZodiacsToRecord();
+                // 自动保存精选生肖到历史记录
+                prediction.silentSaveAllSelectedZodiacs();
               } else {
                 selectedZodiacsGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--sub-text);">暂无精选生肖数据</div>';
               }
@@ -553,10 +554,15 @@ export const analysisRender = {
                     
                     // 保存ML预测历史
                     const { Storage } = await import('../../../storage.js');
-                    const currentIssue = document.getElementById('curExpect')?.innerText || '2026100';
+                    
+                    // ✅ 获取下一期期号（与生肖预测保持一致）
+                    const nextIssueObj = IssueManager.getNextIssue();
+                    const issue = nextIssueObj ? nextIssueObj.full : (document.getElementById('curExpect')?.innerText || '2026100');
+                    
+                    console.log('[ML] 💾 保存预测 - 期号:', issue, '(下一期)');
                     
                     const mlRecord = {
-                      issue: currentIssue,
+                      issue: issue,
                       predictions: predictions,
                       modelVersion: '1.0',
                       inputFeatures: '历史开奖数据',
@@ -1076,24 +1082,33 @@ export const analysisRender = {
       return colorGroups;
     };
 
-    // 创建号码分组HTML
+        // 创建号码分组HTML（优化版 - 单行显示）
     const createNumbersHtml = (colorGroups) => {
-      let html = '';
+      let html = '<div class="zodiac-numbers-section">';
+      
+      // 合并所有号码到一个数组
+      const allNumbers = [];
       Object.entries(colorGroups).forEach(([color, numbers]) => {
-        if(numbers.length > 0) {
-          html += `
-            <div class="zodiac-numbers-group">
-              <h4>${color}波</h4>
-              <div class="zodiac-numbers">
-                ${numbers.map(num => {
-                  const colorClass = analysisCalc.getColor(num);
-                  return `<span class="zodiac-number ${colorClass}">${String(num).padStart(2, '0')}</span>`;
-                }).join(' ')}
-              </div>
-            </div>
-          `;
-        }
+        numbers.forEach(num => {
+          allNumbers.push({ num, color });
+        });
       });
+      
+      if(allNumbers.length > 0) {
+        html += `
+          <div class="zodiac-numbers-single-row">
+            ${allNumbers.map(({ num, color }) => {
+              const colorClass = analysisCalc.getColor(num);
+              const element = analysisCalc.getWuxing(num);
+              return `<div class="zodiac-ball-wrapper" title="${color}波 · 五行：${element}">
+                <span class="zodiac-number ${colorClass}">${String(num).padStart(2, '0')}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        `;
+      }
+      
+      html += '</div>';
       return html;
     };
 
@@ -1108,49 +1123,119 @@ export const analysisRender = {
         const miss = data.zodMiss[zodiac] || 0;
         const avgMiss = data.zodAvgMiss[zodiac] || 0;
         const percentage = data.total > 0 ? ((count / data.total) * 100).toFixed(2) : '0.00';
-        const score = data.zodiacScores ? data.zodiacScores[zodiac] || 0 : 0;
+        
+        // 获取新算法的评分详情
+        const continuous = analysisCalc.calcContinuousScores(data);
+        const scoreDetails = continuous.details[zodiac] || {};
+        const totalScore = continuous.scores[zodiac] || 0;
 
-        // 获取当前期号
+        // 获取当前期号并计算下一期
         const currentIssue = document.getElementById('curExpect')?.innerText || '2026100';
+        // 计算下一期期号（当前期号 + 1）
+        const nextIssue = String(Number(currentIssue) + 1);
 
         const zodiacNumbers = getZodiacNumbers(zodiac);
         const colorGroups = getColorGroups(zodiacNumbers);
         const numbersHtml = createNumbersHtml(colorGroups);
 
-        // 创建弹窗内容
-        const newContent = `
-          <div class="zodiac-detail-header" style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0; font-size: 18px; color: #333;">${Utils.escapeHtml(zodiac)}统计详情 (第${Utils.escapeHtml(currentIssue)}期预测)</h3>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <button class="refresh-btn" style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer;">刷新</button>
-              <button class="close-btn" onclick="this.closest('.zodiac-detail-modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
+        // 构建评分维度卡片
+        const dimensionCards = `
+          <div class="score-dimensions">
+            <div class="dimension-card">
+              <div class="dimension-icon base">🔥</div>
+              <div class="dimension-info">
+                <div class="dimension-label">基础热度</div>
+                <div class="dimension-value">${scoreDetails.base || 0}<span class="dimension-unit">分</span></div>
+                <div class="dimension-status ${scoreDetails.status === '热' ? 'hot' : scoreDetails.status === '温' ? 'warm' : 'cold'}">${scoreDetails.status || '-'}</div>
+              </div>
+            </div>
+            <div class="dimension-card">
+              <div class="dimension-icon shape">✨</div>
+              <div class="dimension-info">
+                <div class="dimension-label">形态共振</div>
+                <div class="dimension-value">${scoreDetails.shape || 0}<span class="dimension-unit">分</span></div>
+                <div class="dimension-desc">单双/大小/波色</div>
+              </div>
+            </div>
+            <div class="dimension-card">
+              <div class="dimension-icon interval">📊</div>
+              <div class="dimension-info">
+                <div class="dimension-label">间隔规律</div>
+                <div class="dimension-value">${scoreDetails.interval || 0}<span class="dimension-unit">分</span></div>
+                <div class="dimension-desc">位置偏移匹配</div>
+              </div>
+            </div>
+            <div class="dimension-card">
+              <div class="dimension-icon trend">📈</div>
+              <div class="dimension-info">
+                <div class="dimension-label">趋势动量</div>
+                <div class="dimension-value">${(scoreDetails.trend || 0) + (scoreDetails.momentum || 0)}<span class="dimension-unit">分</span></div>
+                <div class="dimension-desc">趋${scoreDetails.trend || 0}/动${scoreDetails.momentum || 0}</div>
+              </div>
             </div>
           </div>
-          <div class="zodiac-detail-body" style="padding: 20px;">
-            <div class="zodiac-detail-stats" style="margin-bottom: 20px;">
-              <div class="zodiac-detail-item" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5;">
-                <span class="label" style="font-size: 14px; color: #666;">出现次数：</span>
-                <span class="value" style="font-size: 14px; font-weight: 500;">${Utils.escapeHtml(count.toString())}次</span>
-              </div>
-              <div class="zodiac-detail-item" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5;">
-                <span class="label" style="font-size: 14px; color: #666;">遗漏期数：</span>
-                <span class="value" style="font-size: 14px; font-weight: 500;">${Utils.escapeHtml(miss.toString())}期</span>
-              </div>
-              <div class="zodiac-detail-item" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5;">
-                <span class="label" style="font-size: 14px; color: #666;">平均遗漏：</span>
-                <span class="value" style="font-size: 14px; font-weight: 500;">${Utils.escapeHtml(typeof avgMiss === 'number' ? avgMiss.toFixed(1) : '0')}期</span>
-              </div>
-              <div class="zodiac-detail-item" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5;">
-                <span class="label" style="font-size: 14px; color: #666;">占比：</span>
-                <span class="value" style="font-size: 14px; font-weight: 500;">${Utils.escapeHtml(percentage)}%</span>
-              </div>
-              <div class="zodiac-detail-item" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5;">
-                <span class="label" style="font-size: 14px; color: #666;">预测评分：</span>
-                <span class="value" style="font-size: 14px; font-weight: 500;">${Utils.escapeHtml(score.toString())}分</span>
+        `;
+
+        // 创建弹窗内容（优化版）
+        const newContent = `
+          <div class="zodiac-detail-header-v2">
+            <div class="header-main">
+              <div class="zodiac-badge">${zodiac}</div>
+              <div class="header-info">
+                <h3>生肖统计详情</h3>
+                <div class="issue-tag">第${Utils.escapeHtml(nextIssue)}期预测</div>
               </div>
             </div>
-            <div class="zodiac-detail-numbers">
-              <h4 style="margin: 0 0 15px 0; font-size: 16px; color: #333;">对应号码</h4>
+            <div class="header-actions">
+              <button class="close-btn-v2" title="关闭">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="zodiac-detail-body-v2">
+            <!-- 核心指标卡片 -->
+            <div class="core-metrics">
+              <div class="metric-card primary">
+                <div class="metric-label">预测总分</div>
+                <div class="metric-value">${totalScore}</div>
+                <div class="metric-unit">分</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">出现次数</div>
+                <div class="metric-value">${count}</div>
+                <div class="metric-unit">次</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">遗漏期数</div>
+                <div class="metric-value">${miss}</div>
+                <div class="metric-unit">期</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">占比</div>
+                <div class="metric-value">${percentage}</div>
+                <div class="metric-unit">%</div>
+              </div>
+            </div>
+
+            <!-- 评分维度拆解 -->
+            <div class="detail-section">
+              <div class="section-title">
+                <span class="title-icon">🎯</span>
+                评分维度拆解
+              </div>
+              ${dimensionCards}
+            </div>
+
+            <!-- 对应号码 -->
+            <div class="detail-section">
+              <div class="section-title">
+                <span class="title-icon">🔢</span>
+                对应号码分布
+              </div>
               ${numbersHtml}
             </div>
           </div>
@@ -1158,14 +1243,19 @@ export const analysisRender = {
         
         // 清空并添加新内容
         content.innerHTML = newContent;
-
-        // 添加刷新按钮事件
-        const refreshBtn = content.querySelector('.refresh-btn');
-        if(refreshBtn) {
-          // 清除缓存
-          refreshBtn.addEventListener('click', () => {
-            calculateData(); // 重新计算数据
-            renderContent(content, zodiac);
+        
+        // 添加关闭按钮事件
+        const closeBtn = content.querySelector('.close-btn-v2');
+        if(closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            const modal = content.closest('.zodiac-detail-modal');
+            if(modal) {
+              modal.style.opacity = '0';
+              content.style.transform = 'scale(0.9)';
+              setTimeout(() => {
+                modal.remove();
+              }, 300);
+            }
           });
         }
       });
@@ -1198,36 +1288,9 @@ export const analysisRender = {
     const modal = document.createElement('div');
     modal.className = 'zodiac-detail-modal';
     
-    // 添加样式确保居中显示和遮罩效果
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      transition: opacity 0.3s ease-in-out;
-      backdrop-filter: blur(3px);
-    `;
-    
     // 创建弹窗内容
     const content = document.createElement('div');
     content.className = 'zodiac-detail-modal-content';
-    content.style.cssText = `
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      max-width: 90%;
-      max-height: 80%;
-      overflow-y: auto;
-      transform: scale(0.9);
-      transition: transform 0.3s ease-in-out;
-    `;
     
     content.innerHTML = initialContent;
     modal.appendChild(content);
@@ -1316,6 +1379,106 @@ export const analysisRender = {
     const coldCount = data.miss.cold;
 
     hotColdStatus.innerText = `热:${hotCount} 温:${warmCount} 冷:${coldCount}`;
+  },
+
+  /**
+   * 自动保存生肖预测到记录页面
+   * @param {Object} data - 分析数据
+   */
+  autoSaveZodiacPrediction: (data) => {
+    try {
+      console.log('[AutoSave] ========== 开始自动保存生肖预测 ==========');
+      
+      // 获取预测期号（下一期），与分析页面保持一致
+      const nextIssueObj = IssueManager.getNextIssue();
+      if (!nextIssueObj || !nextIssueObj.full) {
+        console.warn('[AutoSave] ⚠️ 无法获取预测期号，跳过自动保存');
+        return;
+      }
+      
+      const issue = nextIssueObj.full;
+      console.log('[AutoSave] 📅 预测期号:', issue, '(对应分析页面标题中的期号)');
+      
+      // 获取前6名生肖（基于10期、20期、30期数据）
+      const topZodiacs = data.sortedZodiacs ? data.sortedZodiacs.slice(0, 6).map(([zod]) => zod) : [];
+      
+      if (!topZodiacs || topZodiacs.length === 0) {
+        console.warn('[AutoSave] 没有生肖预测数据，跳过自动保存');
+        return;
+      }
+      
+      console.log('[AutoSave] 前6名生肖:', topZodiacs.join(', '));
+      
+      // 检查是否已经存在该期号的记录（去重处理）
+      const allRecords = Storage.get(Storage.KEYS.ZODIAC_RECORDS, []);
+      console.log('[AutoSave] 📋 当前历史记录总数:', allRecords.length);
+      
+      const existingRecord = allRecords.find(r => r.issue === issue && (!r.recordType || r.recordType !== 'selected'));
+      
+      if (existingRecord) {
+        console.log('[AutoSave] ⏭️ 期号', issue, '的生肖预测已存在，跳过重复保存');
+        console.log('[AutoSave] ========== 自动保存结束（跳过） ==========');
+        return;
+      }
+      
+      // 准备多期数数据（使用字符串键名，与HTML按钮的data-period属性保持一致）
+      const periodData = {};
+      ['10', '20', '30'].forEach(period => {
+        const periodAnalysis = analysisCalc.calcZodiacAnalysis(Number(period));
+        if (periodAnalysis && periodAnalysis.sortedZodiacs) {
+          // ✅ 使用五维度评分算法（与预测一致）
+          const continuous = analysisCalc.calcContinuousScores(periodAnalysis);
+          const sortedZodiacs = Object.entries(continuous.scores).sort((a, b) => b[1] - a[1]);
+          // 只保存前6名生肖
+          periodData[period] = sortedZodiacs.slice(0, 6).map(([zod]) => zod);
+        }
+      });
+      
+      console.log('[AutoSave] 📊 多期数数据:', Object.keys(periodData).join(', '));
+      
+      // 构建记录数据
+      const recordData = {
+        issue: issue,
+        zodiacs: topZodiacs, // 只保存前6名
+        periodData: periodData, // 每个期数都只保存前6名
+        createdAt: new Date().toISOString()
+      };
+      
+      console.log('[AutoSave] 💾 准备保存记录 - 期号:', issue, ', 生肖:', topZodiacs.join(', '));
+      
+      // 导入record模块并保存
+      import('../../record.js').then(({ record }) => {
+        try {
+          const success = record.saveZodiacRecord(recordData);
+          if (success) {
+            console.log('[AutoSave] ✅ 自动保存成功！');
+            console.log('[AutoSave]    - 期号:', issue, '(与分析页面标题一致)');
+            console.log('[AutoSave]    - 生肖:', topZodiacs.join(', '));
+            console.log('[AutoSave] ========== 自动保存完成 ==========');
+            
+            // 触发自定义事件，通知当前页面的其他模块数据已更新
+            window.dispatchEvent(new CustomEvent('zodiacPredictionSaved', { 
+              detail: { issue, zodiacs: topZodiacs } 
+            }));
+            
+            // 触发存储事件，通知其他页面更新
+            window.dispatchEvent(new StorageEvent('storage', { key: Storage.KEYS.ZODIAC_RECORDS }));
+          } else {
+            console.error('[AutoSave] ❌ 自动保存生肖预测失败');
+            console.log('[AutoSave] ========== 自动保存结束（失败） ==========');
+          }
+        } catch (saveError) {
+          console.error('[AutoSave] ❌ 自动保存生肖预测异常:', saveError);
+          console.log('[AutoSave] ========== 自动保存结束（异常） ==========');
+        }
+      }).catch(importError => {
+        console.error('[AutoSave] ❌ 导入record模块失败:', importError);
+        console.log('[AutoSave] ========== 自动保存结束（导入失败） ==========');
+      });
+    } catch (error) {
+      console.error('[AutoSave] ❌ 自动保存生肖预测失败:', error);
+      console.log('[AutoSave] ========== 自动保存结束（错误） ==========');
+    }
   },
 
 

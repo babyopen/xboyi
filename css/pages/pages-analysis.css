@@ -8,6 +8,69 @@
   margin-bottom: var(--spacing-md);
   box-shadow: var(--shadow);
   transition: all var(--anim-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 下拉刷新容器 */
+.pull-refresh-container {
+  position: relative;
+  min-height: 100px;
+}
+
+/* 下拉刷新指示器 */
+.pull-refresh-indicator {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(0, 122, 255, 0.9);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.pull-refresh-indicator.visible {
+  opacity: 1;
+}
+
+.pull-refresh-indicator.refreshing {
+  background: rgba(52, 199, 89, 0.9);
+}
+
+/* 刷新图标旋转动画 */
+.pull-refresh-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.pull-refresh-indicator.refreshing .pull-refresh-icon {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 下拉时的弹性效果 */
+.pull-refresh-container.pulling {
+  transition: none;
 }
 
 

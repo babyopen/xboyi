@@ -1368,7 +1368,8 @@
  } 
  .history-header { 
    display: flex; 
-   flex-wrap: wrap; 
+   justify-content: space-between;
+   align-items: center;
    gap: 8px; 
    margin-bottom: 8px; 
    font-size: 13px; 
@@ -1478,6 +1479,21 @@
   border-radius: 999px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
+}
+
+/* 生肖预测历史中的排名标签 */
+.history-tags .history-tag {
+  position: relative;
+  font-weight: 500;
+}
+
+.history-tags .history-tag::before {
+  content: attr(data-rank);
+  display: inline-block;
+  margin-right: 2px;
+  font-size: 11px;
+  color: var(--primary);
+  font-weight: 600;
 }
 
 .prediction-history-item {

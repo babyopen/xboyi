@@ -299,6 +299,18 @@
 
   <!-- 记录页面 -->
   <div class="page" id="recordPage" style="display:none">
+    <!-- 下拉刷新指示器 -->
+    <div class="pull-refresh-indicator" id="recordPullRefreshIndicator">
+      <svg class="pull-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"></path>
+        <path d="M1 20v-6h6"></path>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+      <span id="recordPullRefreshText">下拉刷新</span>
+    </div>
+    
+    <!-- 记录页面容器 -->
+    <div class="pull-refresh-container" id="recordPullContainer">
     <div class="card">
       <div class="card-header">
         <h2>我的收藏</h2>
@@ -335,6 +347,7 @@
         <h2>🔮 生肖预测历史</h2>
         <div style="display:flex;gap:4px;align-items:center;">
           <button class="btn-mini" data-action="togglePredictionFiltersPanel" style="font-size:11px;">选择</button>
+
           <button class="btn-mini red" data-action="clearZodiacPredictionHistory" style="font-size:11px;">清空</button>
         </div>
       </div>
@@ -436,6 +449,7 @@
       </div>
     </div>
     <div class="disclaimer">仅供娱乐，非投注建议</div>
+    </div>
   </div>
 
   <!-- 我的页面 -->
@@ -529,8 +543,18 @@
 
   <!-- 分析页面 -->
   <div class="page" id="analysisPage" style="display:none">
+    <!-- 下拉刷新指示器 -->
+    <div class="pull-refresh-indicator" id="pullRefreshIndicator">
+      <svg class="pull-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"></path>
+        <path d="M1 20v-6h6"></path>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+      <span id="pullRefreshText">下拉刷新</span>
+    </div>
+    
     <!-- 最新开奖 + 倒计时模块 -->
-    <div class="analysis-card">
+    <div class="analysis-card pull-refresh-container" id="analysisPullContainer">
       <div style="text-align:center; margin-bottom:12px;">
         <div style="font-size:15px; color:var(--sub-text);">第 <span id="curExpect">--</span> 期开奖结果</div>
         <div class="countdown-small">
@@ -577,10 +601,7 @@
           <div class="empty-tip" id="zodiacEmptyTip">暂无开奖历史数据</div>
           <div id="zodiacContent" style="display:none;">
             <div class="zodiac-prediction">
-              <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
-                <span>🔮 生肖预测</span>
-                <button class="btn-mini" data-action="saveZodiacPrediction" title="保存生肖预测" style="font-size:12px;padding:4px 10px;">保存</button>
-              </div>
+              <div class="conclusion-title">🔮 生肖预测</div>
               <div id="zodiacPredictionGrid" class="zodiac-prediction-grid"></div>
             </div>
 

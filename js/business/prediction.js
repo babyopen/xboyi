@@ -145,7 +145,75 @@ export const prediction = {
 
   // 精选生肖历史相关
   silentSaveAllSelectedZodiacs: () => {
-    // 这里需要完整的实现...
+    try {
+      console.log('[AutoSave] ========== 开始自动保存精选生肖 ==========');
+      
+      // 获取预测期号（下一期）
+      const nextIssueObj = IssueManager.getNextIssue();
+      if (!nextIssueObj || !nextIssueObj.full) {
+        console.warn('[AutoSave] ⚠️ 无法获取预测期号，跳过自动保存');
+        return;
+      }
+      
+      const issue = nextIssueObj.full;
+      console.log('[AutoSave] 📅 预测期号:', issue);
+      
+      // 获取精选生肖数据（与分析页面显示的一致）
+      const zodiacMap = prediction.getSelectedZodiacs();
+      const selectedZodiacs = Array.from(zodiacMap.keys());
+      
+      if (selectedZodiacs.length === 0) {
+        console.warn('[AutoSave] 没有精选生肖数据，跳过自动保存');
+        return;
+      }
+      
+      console.log('[AutoSave] 精选生肖:', selectedZodiacs.join(', '));
+      
+      // 检查是否已经存在该期号的记录（去重处理）
+      const allRecords = Storage.get('zodiacRecords', []);
+      console.log('[AutoSave] 📋 当前历史记录总数:', allRecords.length);
+      
+      const existingRecord = allRecords.find(r => r.issue === issue && r.recordType === 'selected');
+      
+      if (existingRecord) {
+        console.log('[AutoSave] ⏭️ 期号', issue, '的精选生肖记录已存在，跳过重复保存');
+        console.log('[AutoSave] ========== 自动保存结束（跳过） ==========');
+        return;
+      }
+      
+      // 构建记录数据
+      const recordData = {
+        issue: issue,
+        zodiacs: selectedZodiacs,
+        recordType: 'selected',
+        createdAt: new Date().toISOString()
+      };
+      
+      console.log('[AutoSave] 💾 准备保存记录 - 期号:', issue, ', 生肖:', selectedZodiacs.join(', '));
+      
+      // 保存到存储
+      const success = Storage.saveZodiacRecord(recordData);
+      if (success) {
+        console.log('[AutoSave] ✅ 自动保存成功！');
+        console.log('[AutoSave]    - 期号:', issue);
+        console.log('[AutoSave]    - 生肖:', selectedZodiacs.join(', '));
+        console.log('[AutoSave] ========== 自动保存完成 ==========');
+        
+        // 触发自定义事件，通知当前页面的其他模块数据已更新
+        window.dispatchEvent(new CustomEvent('zodiacPredictionSaved', { 
+          detail: { issue, zodiacs: selectedZodiacs, recordType: 'selected' } 
+        }));
+        
+        // 触发存储事件，通知其他页面更新
+        window.dispatchEvent(new StorageEvent('storage', { key: Storage.KEYS.ZODIAC_RECORDS }));
+      } else {
+        console.error('[AutoSave] ❌ 自动保存精选生肖失败');
+        console.log('[AutoSave] ========== 自动保存结束（失败） ==========');
+      }
+    } catch (error) {
+      console.error('[AutoSave] ❌ 自动保存精选生肖失败:', error);
+      console.log('[AutoSave] ========== 自动保存结束（错误） ==========');
+    }
   },
 
   updateSelectedZodiacHistoryComparison: () => {
@@ -154,23 +222,26 @@ export const prediction = {
 
   getSelectedZodiacs: () => {
     const periods = [10, 20, 30];
-    const selectedZodiacsMap = new Map();
+    const result = new Map();
     
-    periods.forEach(period => {
+    periods.forEach((period, periodIndex) => {
       const periodData = analysisCalc.calcZodiacAnalysis(period);
       if(periodData && periodData.sortedZodiacs && periodData.sortedZodiacs.length > 0) {
-        const top3Zodiacs = periodData.sortedZodiacs.slice(0, 3).map(([zod]) => zod);
-        top3Zodiacs.forEach(zod => {
-          if(selectedZodiacsMap.has(zod)) {
-            selectedZodiacsMap.get(zod).push(period);
-          } else {
-            selectedZodiacsMap.set(zod, [period]);
+        // 使用五维度评分算法（与预测一致）
+        const continuous = analysisCalc.calcContinuousScores(periodData);
+        const sortedZodiacs = Object.entries(continuous.scores).sort((a, b) => b[1] - a[1]);
+        
+        // 取前3名
+        sortedZodiacs.slice(0, 3).forEach(([zod]) => {
+          if(!result.has(zod)) {
+            result.set(zod, []);
           }
+          result.get(zod).push(periodIndex + 1); // 1, 2, 3 分别对应10, 20, 30期
         });
       }
     });
     
-    return selectedZodiacsMap;
+    return result;
   },
 
   toggleZodiacSelection: (zodiac) => {
@@ -225,16 +296,21 @@ export const prediction = {
             const data = calculateData(period);
             if (!data) return;
             
-            const score = data.zodiacScores ? data.zodiacScores[zodiac] : 0;
-            const details = data.zodiacDetails ? data.zodiacDetails[zodiac] : { cold: 0, hot: 0, shape: 0, interval: 0 };
+            // ✅ 使用五维度评分算法
+            const continuous = analysisCalc.calcContinuousScores(data);
+            const score = continuous.scores ? continuous.scores[zodiac] : 0;
+            const detail = continuous.details ? continuous.details[zodiac] : {};
+            
+            // 从原始数据中获取统计信息
             const count = data.zodCount ? data.zodCount[zodiac] : 0;
             const miss = data.zodMiss ? data.zodMiss[zodiac] : 0;
             const avgMiss = data.zodAvgMiss ? data.zodAvgMiss[zodiac] : 0;
             const percentage = data.total > 0 ? ((count / data.total) * 100).toFixed(2) : '0.00';
             
             let rank = '-';
-            if (data.sortedZodiacs) {
-              const idx = data.sortedZodiacs.findIndex(([z]) => z === zodiac);
+            if (continuous.scores) {
+              const sortedZodiacs = Object.entries(continuous.scores).sort((a, b) => b[1] - a[1]);
+              const idx = sortedZodiacs.findIndex(([z]) => z === zodiac);
               if (idx !== -1) rank = `第${idx + 1}名`;
             }
             
@@ -244,50 +320,54 @@ export const prediction = {
             
             periodsHtml += `
               <div style="margin-bottom:16px;">
-                <div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#333;">${escapeHtml(periodLabels[period])}分析</div>
+                <div style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text);">${escapeHtml(periodLabels[period])}分析</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                   <div style="display:flex;flex-direction:column;gap:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">排名</span>
-                      <span style="font-size:13px;font-weight:600;">${escapeHtml(rank)}</span>
+                      <span style="font-size:13px;color:var(--sub-text);">排名</span>
+                      <span style="font-size:13px;font-weight:600;color:var(--text);">${escapeHtml(rank)}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">出现次数</span>
-                      <span style="font-size:13px;">${escapeHtml(count.toString())}次</span>
+                      <span style="font-size:13px;color:var(--sub-text);">出现次数</span>
+                      <span style="font-size:13px;color:var(--text);">${escapeHtml(count.toString())}次</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">遗漏次数</span>
-                      <span style="font-size:13px;">${escapeHtml(miss.toString())}期</span>
+                      <span style="font-size:13px;color:var(--sub-text);">遗漏次数</span>
+                      <span style="font-size:13px;color:var(--text);">${escapeHtml(miss.toString())}期</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">平均遗漏</span>
-                      <span style="font-size:13px;">${escapeHtml(typeof avgMiss === 'number' ? avgMiss.toFixed(1) : '0')}期</span>
+                      <span style="font-size:13px;color:var(--sub-text);">平均遗漏</span>
+                      <span style="font-size:13px;color:var(--text);">${escapeHtml(typeof avgMiss === 'number' ? avgMiss.toFixed(1) : '0')}期</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">占比</span>
-                      <span style="font-size:13px;">${escapeHtml(percentage)}%</span>
+                      <span style="font-size:13px;color:var(--sub-text);">占比</span>
+                      <span style="font-size:13px;color:var(--text);">${escapeHtml(percentage)}%</span>
                     </div>
                   </div>
                   <div style="display:flex;flex-direction:column;gap:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">综合评分</span>
-                      <span style="font-size:13px;font-weight:600;">${escapeHtml(score.toString())}分</span>
+                      <span style="font-size:13px;color:var(--sub-text);">综合评分</span>
+                      <span style="font-size:13px;font-weight:600;color:var(--primary);">${escapeHtml(score.toString())}分</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">冷号得分</span>
-                      <span style="font-size:13px;">${escapeHtml(details.cold.toString())}分</span>
+                      <span style="font-size:13px;color:var(--sub-text);">基础热度</span>
+                      <span style="font-size:13px;color:var(--text);">${escapeHtml(detail.base ? detail.base.toString() : '0')}分</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">热号得分</span>
-                      <span style="font-size:13px;">${escapeHtml(details.hot.toString())}分</span>
+                      <span style="font-size:13px;color:var(--sub-text);">形态共振</span>
+                      <span style="font-size:13px;color:var(--text);">${escapeHtml(detail.shape ? detail.shape.toString() : '0')}分</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">形态得分</span>
-                      <span style="font-size:13px;">${escapeHtml(details.shape.toString())}分</span>
+                      <span style="font-size:13px;color:var(--sub-text);">间隔规律</span>
+                      <span style="font-size:13px;color:var(--text);">${escapeHtml(detail.interval ? detail.interval.toString() : '0')}分</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <span style="font-size:13px;color:#666;">间隔得分</span>
-                      <span style="font-size:13px;">${escapeHtml(details.interval.toString())}分</span>
+                      <span style="font-size:13px;color:var(--sub-text);">趋势动量</span>
+                      <span style="font-size:13px;color:var(--text);">${escapeHtml(detail.trend ? detail.trend.toString() : '0')}分</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:13px;color:var(--sub-text);">近期动量</span>
+                      <span style="font-size:13px;color:var(--text);">${escapeHtml(detail.momentum ? detail.momentum.toString() : '0')}分</span>
                     </div>
                   </div>
                 </div>
@@ -298,25 +378,23 @@ export const prediction = {
           // 计算平均评分
           const averageScore = periodCount > 0 ? (overallScore / periodCount).toFixed(1) : '0.0';
           
-          // 获取当前期号
-          const currentIssue = document.getElementById('curExpect')?.innerText || '2026100';
+          // 获取下一期期号（与预测保持一致）
+          const nextIssueObj = IssueManager.getNextIssue();
+          const currentIssue = nextIssueObj ? nextIssueObj.full : (document.getElementById('curExpect')?.innerText || '2026100');
           
           // 使用文档片段减少DOM操作
           const fragment = document.createDocumentFragment();
           const newContent = document.createElement('div');
           newContent.innerHTML = `
-            <div class="modal-header" style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-              <h3 class="modal-title" style="margin: 0; font-size: 18px; color: #333;">${escapeHtml(zodiac)} 详细评分 (第${escapeHtml(currentIssue)}期精选)</h3>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <button class="refresh-btn" style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer;">刷新</button>
-                <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
-              </div>
+            <div class="modal-header">
+              <h3 class="modal-title">${escapeHtml(zodiac)} 详细评分 (第${escapeHtml(currentIssue)}期精选)</h3>
+              <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
             </div>
-            <div class="modal-body" style="padding: 20px;">
-              <div style="margin-bottom:20px;padding:12px;background:#f5f5f5;border-radius:8px;">
+            <div class="modal-body">
+              <div style="margin-bottom:20px;padding:16px;background:linear-gradient(135deg, var(--primary) 0%, #0051d5 100%);border-radius:12px;color:white;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:14px;font-weight:600;color:#333;">综合平均评分</span>
-                  <span style="font-size:16px;font-weight:700;color:#007AFF;">${escapeHtml(averageScore)}分</span>
+                  <span style="font-size:14px;font-weight:600;">综合平均评分</span>
+                  <span style="font-size:24px;font-weight:700;">${escapeHtml(averageScore)}分</span>
                 </div>
               </div>
               ${periodsHtml}
@@ -328,16 +406,6 @@ export const prediction = {
           // 清空并添加新内容
           content.innerHTML = '';
           content.appendChild(fragment);
-          
-          // 添加刷新按钮事件
-          const refreshBtn = content.querySelector('.refresh-btn');
-          if(refreshBtn) {
-            // 清除缓存
-            refreshBtn.addEventListener('click', () => {
-              dataCache.lastUpdated = 0;
-              renderContent(content, zodiac);
-            });
-          }
         });
       };
       
@@ -345,36 +413,9 @@ export const prediction = {
       const modal = document.createElement('div');
       modal.className = 'modal-overlay';
       
-      // 添加样式确保居中显示和遮罩效果
-      modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        opacity: 0;
-        transition: opacity 0.3s ease-in-out;
-        backdrop-filter: blur(3px);
-      `;
-      
       // 创建弹窗内容
       const content = document.createElement('div');
       content.className = 'modal-content';
-      content.style.cssText = `
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        max-width: 90%;
-        max-height: 80%;
-        overflow-y: auto;
-        transform: scale(0.9);
-        transition: transform 0.3s ease-in-out;
-      `;
       
       // 渲染初始内容
       renderContent(content, zodiac);
@@ -739,109 +780,6 @@ export const prediction = {
     } catch (error) {
       console.error('获取期号失败:', error);
       return '';
-    }
-  },
-
-  /**
-   * 保存精选生肖到记录页面
-   */
-  saveSelectedZodiacsToRecord: () => {
-    try {
-      const top6Zodiacs = prediction.getTop6Zodiacs();
-      
-      if (!top6Zodiacs || top6Zodiacs.length === 0) {
-        console.log('没有生肖数据');
-        return;
-      }
-      
-      // 获取当前期号
-      const issue = prediction.getCurrentIssue();
-      
-      if (!issue) {
-        console.error('获取期号失败');
-        return;
-      }
-      
-      console.log('开始保存生肖数据，期号:', issue);
-      console.log('生肖数据:', top6Zodiacs);
-      
-      // 保存到记录页面（标记为精选生肖类型）
-      import('./record.js').then(({ record }) => {
-        try {
-          const success = record.saveZodiacRecord({
-            issue: issue,
-            zodiacs: top6Zodiacs,
-            recordType: 'selected',
-            periodData: {
-              10: prediction.getTopZodiacsByPeriod(10),
-              20: prediction.getTopZodiacsByPeriod(20),
-              30: prediction.getTopZodiacsByPeriod(30)
-            }
-          });
-          
-          if (success) {
-            console.log('保存精选生肖到记录页面成功');
-          } else {
-            console.error('保存精选生肖到记录页面失败');
-          }
-        } catch (saveError) {
-          console.error('保存精选生肖到记录页面失败:', saveError);
-        }
-      }).catch(importError => {
-        console.error('导入record模块失败:', importError);
-      });
-    } catch(e) {
-      console.error('保存精选生肖到记录页面失败:', e);
-    }
-  },
-
-  /**
-   * 保存生肖预测到记录页面（普通预测，不带类型标记）
-   */
-  saveZodiacPredictionToRecord: () => {
-    try {
-      const topZodiacs = prediction.getTopZodiacsByPeriod(10);
-      
-      if (!topZodiacs || topZodiacs.length === 0) {
-        console.log('没有生肖预测数据');
-        return;
-      }
-      
-      const issue = prediction.getCurrentIssue();
-      if (!issue) {
-        console.error('获取期号失败');
-        return;
-      }
-      
-      console.log('开始保存生肖预测数据，期号:', issue);
-      console.log('生肖预测数据:', topZodiacs);
-      
-      import('./record.js').then(({ record }) => {
-        try {
-          const success = record.saveZodiacRecord({
-            issue: issue,
-            zodiacs: topZodiacs,
-            periodData: {
-              10: prediction.getTopZodiacsByPeriod(10),
-              20: prediction.getTopZodiacsByPeriod(20),
-              30: prediction.getTopZodiacsByPeriod(30)
-            }
-          });
-          
-          if (success) {
-            console.log('保存生肖预测到记录页面成功');
-            Toast.show('生肖预测已保存到记录页面');
-          } else {
-            console.error('保存生肖预测到记录页面失败');
-          }
-        } catch (saveError) {
-          console.error('保存生肖预测到记录页面失败:', saveError);
-        }
-      }).catch(importError => {
-        console.error('导入record模块失败:', importError);
-      });
-    } catch(e) {
-      console.error('保存生肖预测到记录页面失败:', e);
     }
   },
 

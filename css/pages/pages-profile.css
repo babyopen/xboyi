@@ -562,45 +562,535 @@
   color: var(--sub-text);
 }
 
-.zodiac-numbers-group {
-  margin-top: var(--spacing-md);
+/* ====================== 生肖详情弹窗V2 - 现代化设计 ====================== */
+.zodiac-detail-modal-content {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  max-width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.zodiac-numbers-group h4 {
-  margin: 0 0 var(--spacing-sm) 0;
-  color: var(--text);
-  font-size: var(--font-size-md);
+/* 头部区域 */
+.zodiac-detail-header-v2 {
+  padding: 24px;
+  background: linear-gradient(135deg, var(--primary) 0%, #0051d5 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.zodiac-badge {
+  width: 56px;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.header-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
   font-weight: 600;
+  color: white;
 }
 
-.zodiac-numbers {
+.issue-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.refresh-btn-v2,
+.close-btn-v2 {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.refresh-btn-v2 {
+  width: auto;
+  padding: 0 16px;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.refresh-btn-v2 svg,
+.close-btn-v2 svg {
+  transition: transform 0.3s ease;
+}
+
+.refresh-btn-v2:hover:not(:disabled),
+.close-btn-v2:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.refresh-btn-v2:active:not(:disabled),
+.close-btn-v2:active {
+  transform: translateY(0);
+}
+
+.refresh-btn-v2.loading svg {
+  animation: spin 1s linear infinite;
+}
+
+.refresh-btn-v2:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 主体内容区 */
+.zodiac-detail-body-v2 {
+  padding: 24px;
+}
+
+/* 核心指标卡片 */
+.core-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.metric-card.primary {
+  background: linear-gradient(135deg, var(--primary) 0%, #0051d5 100%);
+  color: white;
+  border: none;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--sub-text);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.metric-card.primary .metric-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.metric-unit {
+  font-size: 12px;
+  color: var(--sub-text);
+  font-weight: 500;
+}
+
+.metric-card.primary .metric-unit {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 详情区块 */
+.detail-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+
+.title-icon {
+  font-size: 18px;
+}
+
+/* 评分维度卡片 */
+.score-dimensions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.dimension-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.dimension-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.dimension-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.dimension-icon.base {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+}
+
+.dimension-icon.shape {
+  background: linear-gradient(135deg, #ffa502 0%, #ff7f50 100%);
+}
+
+.dimension-icon.interval {
+  background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%);
+}
+
+.dimension-icon.trend {
+  background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%);
+}
+
+.dimension-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dimension-label {
+  font-size: 13px;
+  color: var(--sub-text);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.dimension-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.dimension-unit {
+  font-size: 12px;
+  color: var(--sub-text);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+.dimension-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.dimension-status.hot {
+  background: rgba(255, 59, 48, 0.1);
+  color: #ff3b30;
+}
+
+.dimension-status.warm {
+  background: rgba(255, 149, 0, 0.1);
+  color: #ff9500;
+}
+
+.dimension-status.cold {
+  background: rgba(52, 199, 89, 0.1);
+  color: #34c759;
+}
+
+.dimension-desc {
+  font-size: 11px;
+  color: var(--sub-text);
+  margin-top: 2px;
+}
+
+/* 号码分布区域 - 单行显示 */
+.zodiac-numbers-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.zodiac-numbers-single-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-sm);
+  gap: 12px;
+  justify-content: center;
+  padding: 16px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.zodiac-ball-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.zodiac-ball-wrapper:hover {
+  transform: scale(1.15);
 }
 
 .zodiac-number {
-  display: inline-block;
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
+  width: 48px;
+  height: 48px;
+  line-height: 48px;
   text-align: center;
   border-radius: 50%;
   color: #fff;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.zodiac-number::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 50% 50% 0 0;
 }
 
 .zodiac-number.red {
-  background: var(--danger);
+  background: radial-gradient(circle at 30% 30%, #ff6b6b, #ff3b30);
 }
 
 .zodiac-number.blue {
-  background: var(--blue);
+  background: radial-gradient(circle at 30% 30%, #5ac8fa, #007aff);
 }
 
 .zodiac-number.green {
-  background: var(--green);
+  background: radial-gradient(circle at 30% 30%, #7bed9f, #34c759);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .core-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .score-dimensions {
+    grid-template-columns: 1fr;
+  }
+  
+  .zodiac-number {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .zodiac-detail-header-v2 {
+    padding: 20px;
+  }
+  
+  .zodiac-badge {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+  
+  .header-info h3 {
+    font-size: 18px;
+  }
+  
+  .zodiac-detail-body-v2 {
+    padding: 20px;
+  }
+  
+  .metric-value {
+    font-size: 24px;
+  }
+  
+  .dimension-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .dimension-value {
+    font-size: 18px;
+  }
+  
+  .zodiac-number {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 14px;
+  }
+  
+  .zodiac-numbers-single-row {
+    gap: 8px;
+    padding: 12px;
+  }
+}
+
+/* ====================== 黑暗模式适配 ====================== */
+@media (prefers-color-scheme: dark) {
+  .zodiac-detail-modal-content {
+    background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
+  }
+  
+  .zodiac-detail-header-v2 {
+    background: linear-gradient(135deg, #0a84ff 0%, #0051d5 100%);
+  }
+  
+  .zodiac-badge {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  
+  .issue-tag {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .refresh-btn-v2,
+  .close-btn-v2 {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  
+  .refresh-btn-v2:hover:not(:disabled),
+  .close-btn-v2:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  
+  .metric-card {
+    background: #2c2c2e;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .metric-label {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .metric-value {
+    color: #ffffff;
+  }
+  
+  .metric-unit {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .section-title {
+    color: #ffffff;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .dimension-card {
+    background: #2c2c2e;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .dimension-label {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .dimension-value {
+    color: #ffffff;
+  }
+  
+  .dimension-unit {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .dimension-desc {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .zodiac-numbers-single-row {
+    background: #2c2c2e;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .zodiac-number {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
 }
 
 /* ====================== 弹窗详情优化样式 ====================== */
