@@ -620,6 +620,27 @@ if (!Business.topFilter) {
   };
 }
 
+if (!Business.deleteFilter) {
+  Business.deleteFilter = (index) => {
+    try {
+      if(!confirm("确定删除该方案？")) return;
+      const state = StateManager._state;
+      const newList = [...state.savedFilters];
+      newList.splice(index, 1);
+      const success = Storage.set(Storage.KEYS.SAVED_FILTERS, newList);
+      
+      if(success){
+        StateManager.setState({ savedFilters: newList }, false);
+        Render.renderFilterList();
+        Toast.show('删除成功');
+      }
+    } catch(e) {
+      console.error('删除方案失败:', e);
+      Toast.show('删除失败');
+    }
+  };
+}
+
 if (!Business.favoriteFilter) {
   Business.favoriteFilter = (index) => {
     try {

@@ -329,7 +329,7 @@
         <div style="text-align:center;color:var(--sub-text);padding:20px;">加载中...</div>
       </div>
     </div>
-    <div class="card">
+    <div class="card" id="selectedZodiacHistorySection">
       <div class="card-header">
         <h2>精选生肖</h2>
         <div style="display:flex;gap:4px;align-items:center;">
@@ -339,6 +339,9 @@
       <div class="card-body">
         <div id="selectedZodiacHistoryList">
           <div class="empty-tip">暂无精选生肖历史</div>
+        </div>
+        <div id="selectedZodiacHistoryToggle" style="display:none;margin-top:8px;">
+          <button class="toggle-btn" data-action="toggleSelectedZodiacCollapse" style="width:100%;">展开更多</button>
         </div>
       </div>
     </div>
@@ -431,6 +434,9 @@
         <div id="specialHistoryList">
           <div class="empty-tip">暂无精选特码历史</div>
         </div>
+        <div id="specialHistoryToggle" style="display:none;margin-top:8px;">
+          <button class="toggle-btn" data-action="toggleSpecialCollapse" style="width:100%;">展开更多</button>
+        </div>
         <div id="specialHistoryPagination" class="pagination"></div>
       </div>
     </div>
@@ -444,6 +450,9 @@
       <div class="card-body">
         <div id="hotNumbersHistoryList">
           <div class="empty-tip">暂无特码热门TOP5历史</div>
+        </div>
+        <div id="hotNumbersHistoryToggle" style="display:none;margin-top:8px;">
+          <button class="toggle-btn" data-action="toggleHotNumbersCollapse" style="width:100%;">展开更多</button>
         </div>
         <div id="hotNumbersHistoryPagination" class="pagination"></div>
       </div>
@@ -667,7 +676,6 @@
                   </div>
                   <button class="btn-mini" data-action="copyZodiacNumbers" style="flex-shrink:0;">复制</button>
                   <button class="btn-mini" data-action="favoriteZodiacNumbers" style="flex-shrink:0;">收藏</button>
-                  <button class="btn-mini" data-action="saveNumberRecord" style="flex-shrink:0;">保存记录</button>
                 </div>
               </div>
               <div id="zodiacFinalNumContent">--</div>

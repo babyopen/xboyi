@@ -271,22 +271,28 @@ export const dataFetch = {
    */
   _checkAndUpdateRecords: (sortedData) => {
     if (sortedData.length > 0) {
-      const latestItem = sortedData[0];
-      const issue = latestItem.expect;
-      const s = analysis.getSpecial(latestItem);
-      const resultZodiac = s.zod;
+      // 检查最近10期的开奖数据，确保早期记录也能被核对
+      const recentItems = sortedData.slice(0, 10);
       
-      // 提取实际开奖号码
-      const openCode = latestItem.openCode || '';
-      const actualNumbers = openCode.split(',').map(num => num.trim()).filter(num => num);
-      
-      // 自动核对生肖记录
       import('../../record.js').then(({ record }) => {
-        record.checkZodiacRecord(issue, resultZodiac);
-        // 自动核对号码记录
-        if (actualNumbers.length > 0) {
-          record.checkNumberRecord(issue, actualNumbers);
-        }
+        recentItems.forEach(item => {
+          const issue = item.expect;
+          const s = analysis.getSpecial(item);
+          const resultZodiac = s.zod;
+          
+          // 提取实际开奖号码
+          const openCode = item.openCode || '';
+          const actualNumbers = openCode.split(',').map(num => num.trim()).filter(num => num);
+          
+          // 自动核对生肖记录
+          record.checkZodiacRecord(issue, resultZodiac);
+          // 自动核对号码记录（精选特码）
+          if (actualNumbers.length > 0) {
+            record.checkNumberRecord(issue, actualNumbers);
+            // ✅ 自动核对待码热门TOP5记录
+            record.checkHotNumbersRecord(issue, actualNumbers);
+          }
+        });
       });
     }
   },

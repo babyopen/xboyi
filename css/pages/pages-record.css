@@ -1353,13 +1353,14 @@
    gap: 12px; 
  } 
  .prediction-history-item { 
-   background: var(--bg-secondary); 
-   border-radius: 16px; 
-   padding: 12px; 
-   display: flex; 
-   align-items: center; 
-   gap: 12px; 
- } 
+  background: var(--bg-secondary); 
+  border-radius: 16px; 
+  padding: 12px; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: flex-start; 
+  gap: 12px; 
+} 
  .history-checkbox { 
    flex-shrink: 0; 
  } 
@@ -1487,13 +1488,9 @@
   font-weight: 500;
 }
 
+/* 移除序号显示，保持与精选生肖历史标签一致 */
 .history-tags .history-tag::before {
-  content: attr(data-rank);
-  display: inline-block;
-  margin-right: 2px;
-  font-size: 11px;
-  color: var(--primary);
-  font-weight: 600;
+  display: none;
 }
 
 .prediction-history-item {

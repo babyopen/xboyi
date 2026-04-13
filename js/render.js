@@ -165,6 +165,7 @@ export const Render = {
             <button data-action="${CONFIG.ACTIONS.COPY_FILTER}" data-index="${realIndex}">复制</button>
             <button data-action="${CONFIG.ACTIONS.TOP_FILTER}" data-index="${realIndex}">置顶</button>
             <button data-action="favoriteFilter" data-index="${realIndex}" ${isFavorited ? 'class="red"' : ''}>收藏</button>
+            <button class="del" data-action="${CONFIG.ACTIONS.DELETE_FILTER}" data-index="${realIndex}">删除</button>
           </div>
         `;
         itemWrapper.querySelector('.filter-preview').appendChild(previewFragment);

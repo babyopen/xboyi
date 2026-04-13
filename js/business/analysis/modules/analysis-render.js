@@ -116,6 +116,55 @@ export const analysisRender = {
       hotNumberEl.innerHTML = buildHotNumberBalls(data.hotNum);
       hotNumberEl.style.color = 'inherit';
     }
+    
+    // ✅ 自动保存特码热门TOP5记录
+    analysisRender.autoSaveHotNumbersRecord(data, fullNumZodiacMap);
+  },
+
+  /**
+   * ✅ 自动保存特码热门TOP5记录（使用下一期期号）
+   * @param {Object} data - 分析数据
+   * @param {Map} fullNumZodiacMap - 号码-生肖映射
+   */
+  autoSaveHotNumbersRecord: (data, fullNumZodiacMap) => {
+    try {
+      // ✅ 获取下一期期号（预测数据必须使用下一期）
+      const nextIssueObj = IssueManager.getNextIssue();
+      if (!nextIssueObj || !nextIssueObj.full) {
+        console.warn('未找到下一期期号，跳过特码热门TOP5自动保存');
+        return;
+      }
+      const issue = nextIssueObj.full;
+
+      // 使用多维度筛选算法获取热门号码
+      let hotNums = analysisCalc.getHotNumbers(data, 5, fullNumZodiacMap);
+      
+      // 按数字大小排序
+      hotNums.sort((a, b) => a - b);
+      
+      // 转换为字符串格式
+      const numbersStr = hotNums.map(n => String(n).padStart(2, '0'));
+
+      // 构建记录对象
+      const recordData = {
+        issue: issue,
+        numbers: numbersStr
+      };
+
+      // 异步导入storage模块并保存
+      import('../../../storage.js').then(({ Storage }) => {
+        const success = Storage.saveHotNumbersRecord(recordData);
+        if (success) {
+          console.log('✅ 特码热门TOP5记录已自动保存', { issue: `${issue}(下一期)`, count: numbersStr.length });
+        } else {
+          console.error('❌ 特码热门TOP5记录自动保存失败');
+        }
+      }).catch(err => {
+        console.error('导入storage模块失败:', err);
+      });
+    } catch (error) {
+      console.error('自动保存特码热门TOP5记录失败:', error);
+    }
   },
 
   /**
@@ -541,7 +590,8 @@ export const analysisRender = {
                           <div class="zodiac-name">${item.zodiac}</div>
                         </div>
                       `;
-                      predictions.push(`${item.zodiac}(${prob}%)`);
+                      // ✅ 只保存生肖名称，不保存百分比
+                      predictions.push(item.zodiac);
                     });
                     mlGrid.innerHTML = html;
                     mlStatus.innerText = '模型状态: 预测完成';
@@ -707,9 +757,12 @@ export const analysisRender = {
    * @param {Object} data 分析数据
    */
   renderZodiacFinalNums: (data) => {
+    console.log('🎯 renderZodiacFinalNums 被调用', { hasData: !!data, sortedZodiacs: data?.sortedZodiacs?.length });
+    
     const state = StateManager._state;
     const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
     const mode = state.analysis.specialMode || 'hot';
+    console.log('📊 当前模式:', mode);
     
     // 同步模式按钮状态
     document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
@@ -717,6 +770,7 @@ export const analysisRender = {
     });
     
     if(!data || !data.sortedZodiacs || data.sortedZodiacs.length === 0) {
+      console.warn('⚠️ 没有数据，跳过渲染和保存');
       if(zodiacFinalNumContent) {
         zodiacFinalNumContent.innerHTML = '✅ 精选特码：暂无数据';
         zodiacFinalNumContent.classList.remove('final-recommend-z-balls');
@@ -729,26 +783,52 @@ export const analysisRender = {
 
     const targetCount = state.analysis.selectedNumCount;
     let finalNums = [];
+    let hotNumbers = [];  // ✅ 热号数据
+    let coldNumbers = []; // ✅ 冷号数据
 
     // 根据模式选择不同的筛选策略
     if(mode === 'cold') {
       // ❄️ 冷号反弹模式
-      finalNums = analysisCalc.getColdReboundNumbers(data, targetCount, fullNumZodiacMap);
+      coldNumbers = analysisCalc.getColdReboundNumbers(data, targetCount, fullNumZodiacMap);
+      finalNums = [...coldNumbers];
+      // ✅ 同时计算热号
+      hotNumbers = analysisCalc.getHotNumbers(data, targetCount, fullNumZodiacMap);
     } else if(mode === 'auto') {
       // 🤖 自动模式：智能判断使用热号还是冷号模式
       const modeDecision = analysisCalc.decideAutoMode(data);
       if(modeDecision === 'cold') {
-        finalNums = analysisCalc.getColdReboundNumbers(data, targetCount, fullNumZodiacMap);
+        coldNumbers = analysisCalc.getColdReboundNumbers(data, targetCount, fullNumZodiacMap);
+        finalNums = [...coldNumbers];
+        // ✅ 同时计算热号
+        hotNumbers = analysisCalc.getHotNumbers(data, targetCount, fullNumZodiacMap);
       } else {
-        finalNums = analysisCalc.getHotNumbers(data, targetCount, fullNumZodiacMap);
+        hotNumbers = analysisCalc.getHotNumbers(data, targetCount, fullNumZodiacMap);
+        finalNums = [...hotNumbers];
+        // ✅ 同时计算冷号
+        coldNumbers = analysisCalc.getColdReboundNumbers(data, targetCount, fullNumZodiacMap);
       }
     } else {
       // 🔥 热号模式（默认）
-      finalNums = analysisCalc.getHotNumbers(data, targetCount, fullNumZodiacMap);
+      hotNumbers = analysisCalc.getHotNumbers(data, targetCount, fullNumZodiacMap);
+      finalNums = [...hotNumbers];
+      // ✅ 同时计算冷号
+      coldNumbers = analysisCalc.getColdReboundNumbers(data, targetCount, fullNumZodiacMap);
     }
 
     // 排序
     finalNums.sort((a, b) => a - b);
+    hotNumbers.sort((a, b) => a - b);
+    coldNumbers.sort((a, b) => a - b);
+
+    console.log('🔢 计算完成，准备保存', { 
+      finalNums: finalNums.length, 
+      hotNumbers: hotNumbers.length, 
+      coldNumbers: coldNumbers.length,
+      mode 
+    });
+
+    // ✅ 自动保存记录（包含热号、冷号和当前模式）
+    analysisRender.autoSaveSpecialRecord(finalNums, hotNumbers, coldNumbers, mode);
 
     // 渲染成带颜色、生肖和五行的球号
     let ballHtml = '<div class="ball-group">';
@@ -777,6 +857,77 @@ export const analysisRender = {
     if(zodiacFinalNumContent) {
       zodiacFinalNumContent.innerHTML = ballHtml;
       zodiacFinalNumContent.classList.add('final-recommend-z-balls');
+    }
+  },
+
+  /**
+   * ✅ 自动保存精选特码记录（包含热号、冷号和当前模式）
+   * @param {Array} finalNums - 最终显示的号码
+   * @param {Array} hotNumbers - 热号数据
+   * @param {Array} coldNumbers - 冷号数据
+   * @param {string} mode - 当前模式 (hot/cold/auto)
+   */
+  autoSaveSpecialRecord: (finalNums, hotNumbers, coldNumbers, mode) => {
+    try {
+      console.log('🔍 开始自动保存精选特码', { finalNums, mode });
+      
+      // ✅ 获取下一期期号（预测数据必须使用下一期）
+      const nextIssueObj = IssueManager.getNextIssue();
+      console.log('📅 下一期期号对象:', nextIssueObj);
+      
+      if (!nextIssueObj || !nextIssueObj.full) {
+        console.warn('⚠️ 未找到下一期期号，跳过自动保存');
+        return;
+      }
+      const issue = nextIssueObj.full;
+      console.log('✅ 获取到下一期期号:', issue);
+
+      // 转换为字符串格式
+      const numbersStr = finalNums.map(n => String(n).padStart(2, '0'));
+      const hotNumbersStr = hotNumbers.map(n => String(n).padStart(2, '0'));
+      const coldNumbersStr = coldNumbers.map(n => String(n).padStart(2, '0'));
+      console.log('🔢 号码数据:', { numbers: numbersStr, hot: hotNumbersStr, cold: coldNumbersStr });
+
+      // 确定类型
+      let type = mode;
+      if (mode === 'auto') {
+        // 自动模式下，根据实际选择的子模式设置type
+        const state = StateManager._state;
+        const data = analysisCalc.calcFullAnalysis();
+        if (data) {
+          const modeDecision = analysisCalc.decideAutoMode(data);
+          type = `auto-${modeDecision}`; // auto-hot 或 auto-cold
+          console.log('🤖 自动模式子类型:', type);
+        }
+      }
+
+      // 构建记录对象
+      const recordData = {
+        issue: issue,
+        numbers: numbersStr,
+        hotNumbers: hotNumbersStr,  // ✅ 保存热号
+        coldNumbers: coldNumbersStr, // ✅ 保存冷号
+        mode: mode,                  // ✅ 保存当前模式
+        type: type                   // ✅ 保存类型（用于筛选）
+      };
+      console.log('📦 准备保存的记录:', recordData);
+
+      // 异步导入record模块并保存
+      import('../../record.js').then(({ record }) => {
+        console.log('📥 record模块导入成功');
+        const success = record.saveNumberRecord(recordData);
+        console.log('💾 保存结果:', success);
+        if (success) {
+          console.log('✅ 精选特码记录已自动保存', { issue: `${issue}(下一期)`, mode, count: numbersStr.length });
+        } else {
+          console.error('❌ 精选特码记录自动保存失败');
+        }
+      }).catch(err => {
+        console.error('❌ 导入record模块失败:', err);
+      });
+    } catch (error) {
+      console.error('❌ 自动保存精选特码记录失败:', error);
+      console.error('错误堆栈:', error.stack);
     }
   },
 

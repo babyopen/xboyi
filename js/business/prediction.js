@@ -186,7 +186,10 @@ export const prediction = {
         issue: issue,
         zodiacs: selectedZodiacs,
         recordType: 'selected',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        checked: false,  // 是否已核对
+        matched: false,  // 是否命中
+        actualZodiac: null  // 开奖生肖
       };
       
       console.log('[AutoSave] 💾 准备保存记录 - 期号:', issue, ', 生肖:', selectedZodiacs.join(', '));
@@ -707,9 +710,9 @@ export const prediction = {
    */
   silentSaveHotNumbers: () => {
     try {
-      // 这里可以添加保存特码热门TOP5的逻辑
-      // 例如：将当前的热门特码保存到历史记录
-      console.log('后台静默保存特码热门TOP5');
+      // ✅ 特码热门TOP5已在 analysis-render.js 的 updateHotConclusion 中自动保存
+      // 此函数保留作为兼容接口，实际无需额外操作
+      console.log('特码热门TOP5已自动保存（使用下一期期号）');
     } catch(e) {
       console.error('后台静默保存特码热门TOP5失败:', e);
     }

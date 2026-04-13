@@ -4,10 +4,14 @@ import { StateManager } from '../state-manager.js';
 import { Toast } from '../toast.js';
 import { Filter } from '../filter.js';
 import { DataQuery } from '../data-query.js';
+import { Utils } from '/js/utils.js';
 
 export const record = {
   // 标记事件是否已绑定，防止重复绑定
   _eventsBound: false,
+  
+  // 滑动删除处理器引用缓存（避免重复创建）
+  _swipeHandlers: new WeakMap(),
   
   init: () => {
     // 使用DOMContentLoaded确保DOM元素完全加载
@@ -58,22 +62,21 @@ export const record = {
   
   /**
    * 刷新记录页面所有数据（静默模式）
+   * @returns {boolean} 是否刷新成功
    */
   refreshAll: () => {
     try {
-      // 清除所有相关缓存（使用正确的key）
-      Storage.clearCache('favorites');
-      Storage.clearCache('zodiacRecords');
-      Storage.clearCache('mlPredictionRecords');
-      Storage.clearCache('numberRecords');
-      Storage.clearCache('hotNumbersRecords');
+      // 清除所有相关缓存
+      const cacheKeys = ['favorites', 'zodiacRecords', 'mlPredictionRecords', 'numberRecords', 'hotNumbersRecords'];
+      cacheKeys.forEach(key => Storage.clearCache(key));
       
       // 重新渲染所有数据
       record.renderAll();
       
       return true;
     } catch (error) {
-      console.error('刷新记录页面失败:', error);
+      console.error('[Record] 刷新记录页面失败:', error);
+      Toast.show('刷新失败，请重试');
       return false;
     }
   },
@@ -81,14 +84,16 @@ export const record = {
   // ---------- 我的收藏 ----------
   renderFavoriteList: () => {
     const container = document.getElementById('favoriteList');
-    if (!container) return;
+    if (!container) {
+      console.warn('[Record] 容器不存在: favoriteList');
+      return;
+    }
     
     // 显示加载状态
     container.innerHTML = '<div class="loading-tip">加载中...</div>';
     
     try {
-      // 清除缓存，确保获取最新数据
-      Storage.clearCache('favorites');
+      // ✅ 直接获取数据，不清除缓存
       const favorites = Storage.get('favorites', []);
       
       if (!favorites.length) {
@@ -185,14 +190,16 @@ export const record = {
   // ---------- 预测统计 ----------
   renderPredictionStatistics: () => {
     const container = document.getElementById('predictionStatisticsBody');
-    if (!container) return;
+    if (!container) {
+      console.warn('[Record] 容器不存在: predictionStatisticsBody');
+      return;
+    }
     
     // 显示加载状态
     container.innerHTML = '<div class="loading-tip">加载中...</div>';
     
     try {
-      // 清除缓存，确保获取最新数据
-      Storage.clearCache('zodiacRecords');
+      // ✅ 直接获取数据，不清除缓存
       const zodiacStats = record._getCategoryStats('zodiac');
       const selectedZodiacStats = record._getCategoryStats('selectedZodiac');
       const totalPredictions = zodiacStats.total + selectedZodiacStats.total;
@@ -219,8 +226,8 @@ export const record = {
             <div style="font-size:12px;color:var(--sub-text);margin-top:4px">待开奖</div>
           </div>
         </div>
-        <div style="display:flex;gap:12px;flex-wrap:nowrap;overflow-x:auto;">
-          <div style="flex:1;min-width:200px;background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s ease;" data-action="showDetailedStatistics" data-type="zodiac">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+          <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s ease;" data-action="showDetailedStatistics" data-type="zodiac">
             <div class="card-header" style="padding:0;margin-bottom:12px;">
               <h2 style="font-size:16px;">生肖预测</h2>
               <div style="font-size:12px;color:var(--sub-text);margin-top:4px;">点击查看详情</div>
@@ -242,10 +249,10 @@ export const record = {
               <span style="font-size:16px;font-weight:600;color:var(--primary)">${zodiacStats.hitRate}%</span>
             </div>
           </div>
-          <div style="flex:1;min-width:200px;background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s ease;" data-action="showDetailedStatistics" data-type="selected">
+          <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s ease;" data-action="scrollToSelectedHistory">
             <div class="card-header" style="padding:0;margin-bottom:12px;">
               <h2 style="font-size:16px;">精选生肖</h2>
-              <div style="font-size:12px;color:var(--sub-text);margin-top:4px;">点击查看详情</div>
+              <div style="font-size:12px;color:var(--sub-text);margin-top:4px;">点击查看历史</div>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <span style="font-size:14px;color:var(--sub-text)">命中</span>
@@ -289,14 +296,16 @@ export const record = {
   // ---------- 精选生肖历史 ----------
   renderSelectedZodiacHistory: () => {
     const container = document.getElementById('selectedZodiacHistoryList');
-    if (!container) return;
+    if (!container) {
+      console.warn('[Record] 容器不存在: selectedZodiacHistoryList');
+      return;
+    }
     
     // 显示加载状态
     container.innerHTML = '<div class="loading-tip">加载中...</div>';
     
     try {
-      // 清除缓存，确保获取最新数据
-      Storage.clearCache('zodiacRecords');
+      // ✅ 直接从Storage获取数据，不清除缓存（提升性能）
       const allRecords = Storage.get('zodiacRecords', []);
       const records = allRecords.filter(r => r.recordType === 'selected');
       
@@ -310,17 +319,43 @@ export const record = {
         try {
           const dateStr = rec.createdAt ? new Date(rec.createdAt).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
           const zodiacs = Array.isArray(rec.zodiacs) ? rec.zodiacs : [];
+          
+          // 构建预测生肖标签HTML
+          const predictedTagsHtml = zodiacs.map(z => {
+            // ✅ 只取生肖名称，去除可能的百分比部分（如 "鼠(11.2%)" -> "鼠"）
+            const zodiacName = z.split('(')[0].trim();
+            // 判断是否命中（只有命中的那个生肖才高亮）
+            const isMatched = rec.checked && rec.matched && rec.actualZodiac === zodiacName;
+            const className = isMatched ? 'history-tag history-tag-matched' : 'history-tag';
+            return `<div class="${className}">${escapeHtml(zodiacName)}</div>`;
+          }).join('');
+          
+          // 构建开奖生肖标签HTML
+          let actualTagHtml = '';
+          if (rec.checked && rec.actualZodiac) {
+            const actualClass = rec.matched ? 'history-tag history-tag-actual history-tag-matched' : 'history-tag history-tag-actual history-tag-miss';
+            actualTagHtml = `<div class="${actualClass}" data-type="actual">${escapeHtml(rec.actualZodiac)}</div>`;
+          }
+          
           const item = document.createElement('div');
           item.className = 'history-item';
+          item.dataset.index = idx;
           item.innerHTML = `
             <div class="history-header">
               <div class="history-nums">第${rec.issue || ''}期</div>
               <div class="history-time">${dateStr}</div>
             </div>
             <div class="history-tags">
-              ${zodiacs.map(z => `<div class="history-tag">${escapeHtml(z)}</div>`).join('')}
+              <div class="history-tags-predicted">${predictedTagsHtml}</div>
+              ${actualTagHtml ? `<div class="history-tags-actual">${actualTagHtml}</div>` : ''}
             </div>
           `;
+          
+          // 绑定触摸事件
+          record._bindSwipeDeleteToItem(item, idx, 'selectedZodiac', () => {
+            record._deleteSelectedZodiacRecord(idx);
+          });
+          
           fragment.appendChild(item);
         } catch (error) {
           console.error('渲染精选生肖历史项失败:', error);
@@ -328,6 +363,9 @@ export const record = {
       });
       container.innerHTML = '';
       container.appendChild(fragment);
+      
+      // ✅ 应用折叠/展开逻辑
+      record._applyCollapseLogic('selectedZodiacHistoryList', 'selectedZodiacHistoryToggle', 'selectedZodiac');
     } catch (error) {
       console.error('加载精选生肖历史失败:', error);
       container.innerHTML = '<div class="error-tip">加载失败，请点击刷新重试</div>';
@@ -352,6 +390,59 @@ export const record = {
     hotNumbers: { page: 1, pageSize: 5 }
   },
   
+  // ✅ 折叠/展开状态管理
+  _collapseState: {
+    selectedZodiac: false,  // 精选生肖
+    zodiacPrediction: false, // 生肖预测
+    mlPrediction: false,     // ML预测
+    special: false,          // 精选特码
+    hotNumbers: false        // 特码热门TOP5
+  },
+  
+  /**
+   * ✅ 应用折叠/展开逻辑
+   * @param {string} containerId - 容器ID
+   * @param {string} toggleId - 切换按钮ID
+   * @param {string} stateKey - 状态键名
+   */
+  _applyCollapseLogic: (containerId, toggleId, stateKey) => {
+    const container = document.getElementById(containerId);
+    const toggle = document.getElementById(toggleId);
+    
+    if (!container || !toggle) return;
+    
+    const items = container.querySelectorAll('.history-item');
+    const isExpanded = record._collapseState[stateKey];
+    
+    if (items.length <= 2) {
+      // 如果记录数不超过2条，隐藏切换按钮
+      toggle.style.display = 'none';
+      return;
+    }
+    
+    // 显示切换按钮
+    toggle.style.display = 'block';
+    toggle.textContent = isExpanded ? '收起' : '展开更多';
+    
+    // 根据状态显示/隐藏多余的记录
+    items.forEach((item, index) => {
+      if (index >= 2) {
+        item.style.display = isExpanded ? 'block' : 'none';
+      }
+    });
+  },
+  
+  /**
+   * ✅ 切换折叠/展开状态
+   * @param {string} stateKey - 状态键名
+   * @param {string} containerId - 容器ID
+   * @param {string} toggleId - 切换按钮ID
+   */
+  _toggleCollapse: (stateKey, containerId, toggleId) => {
+    record._collapseState[stateKey] = !record._collapseState[stateKey];
+    record._applyCollapseLogic(containerId, toggleId, stateKey);
+  },
+  
   // 生肖预测历史筛选状态
   _zodiacPredictionFilter: {
     selectedPeriods: ['10'] // 默认只显示10期数据
@@ -370,8 +461,7 @@ export const record = {
     }
     
     try {
-      // 清除缓存，确保获取最新数据
-      Storage.clearCache('zodiacRecords');
+      // ✅ 直接获取数据，不清除缓存
       const allRecords = Storage.get('zodiacRecords', []);
       let records = allRecords.filter(r => !r.recordType || r.recordType !== 'selected');
       
@@ -461,21 +551,41 @@ export const record = {
           
           const item = document.createElement('div');
           item.className = 'history-item';
+          item.dataset.index = idx;
+          
+          // 构建预测生肖标签HTML
+          const predictedTagsHtml = zodiacs.map((z, index) => {
+            // ✅ 只取生肖名称，去除可能的百分比部分（如 "鼠(11.2%)" -> "鼠"）
+            const zodiacName = z.split('(')[0].trim();
+            // 判断是否命中
+            const isMatched = rec.checked && rec.matched && rec.actualZodiac === zodiacName;
+            const className = isMatched ? 'history-tag history-tag-matched' : 'history-tag';
+            return `<div class="${className}" data-rank="${index + 1}">${escapeHtml(zodiacName)}</div>`;
+          }).join('');
+          
+          // 构建开奖生肖标签HTML
+          let actualTagHtml = '';
+          if (rec.checked && rec.actualZodiac) {
+            const actualClass = rec.matched ? 'history-tag history-tag-actual history-tag-matched' : 'history-tag history-tag-actual history-tag-miss';
+            actualTagHtml = `<div class="${actualClass}" data-type="actual">${escapeHtml(rec.actualZodiac)}</div>`;
+          }
+          
           item.innerHTML = `
             <div class="history-header">
               <div class="history-nums">第${escapeHtml(displayIssue)}期 ${escapeHtml(periodInfo)}</div>
               <div class="history-time">${dateStr}</div>
             </div>
             <div class="history-tags">
-              ${zodiacs.map((z, index) => `<div class="history-tag" data-rank="${index + 1}">${escapeHtml(z)}</div>`).join('')}
+              <div class="history-tags-predicted">${predictedTagsHtml}</div>
+              ${actualTagHtml ? `<div class="history-tags-actual">${actualTagHtml}</div>` : ''}
             </div>
-            ${rec.checked ? `
-              <div class="history-check-result" style="margin-top:8px;font-size:12px;">
-                ${rec.matched ? '<span style="color:var(--green)">✓ 命中</span>' : '<span style="color:var(--danger)">✗ 未中</span>'}
-                ${rec.actualZodiac ? `<span style="color:var(--sub-text);margin-left:8px;">开奖：${escapeHtml(rec.actualZodiac)}</span>` : ''}
-              </div>
-            ` : ''}
           `;
+          
+          // 绑定触摸事件
+          record._bindSwipeDeleteToItem(item, idx, 'zodiacPrediction', () => {
+            record._deleteZodiacPredictionRecord(rec.issue);
+          });
+          
           fragment.appendChild(item);
         } catch (error) {
           console.error('渲染生肖预测历史项失败:', error);
@@ -532,8 +642,7 @@ export const record = {
     }
     
     try {
-      // 清除缓存，确保获取最新数据
-      Storage.clearCache('mlPredictionRecords');
+      // ✅ 直接获取数据，不清除缓存
       const mlRecords = Storage.get('mlPredictionRecords', []);
       
       if (!mlRecords.length) { 
@@ -589,16 +698,29 @@ export const record = {
           const inputFeatures = rec.inputFeatures || '历史开奖数据';
           const item = document.createElement('div');
           item.className = 'history-item';
+          item.dataset.index = idx;
           item.innerHTML = `
             <div class="history-header">
               <div class="history-nums">第${rec.issue || ''}期 ML预测</div>
               <div class="history-time">${dateStr}</div>
             </div>
             <div class="history-tags">
-              ${zodiacs.map(z => `<div class="history-tag">${escapeHtml(z)}</div>`).join('')}
+              <div class="history-tags-predicted">
+              ${zodiacs.map(z => {
+                // ✅ 只取生肖名称，去除可能的百分比部分（如 "龙(14.9%)" -> "龙"）
+                const zodiacName = z.split('(')[0].trim();
+                return `<div class="history-tag">${escapeHtml(zodiacName)}</div>`;
+              }).join('')}
+              </div>
             </div>
             <div class="history-meta" style="font-size: 12px; color: #999; margin-top: 5px;">模型版本: ${escapeHtml(modelVersion)} | 特征: ${escapeHtml(inputFeatures)}</div>
           `;
+          
+          // 绑定触摸事件
+          record._bindSwipeDeleteToItem(item, idx, 'mlPrediction', () => {
+            record._deleteMLPredictionRecord(rec.issue);
+          });
+          
           fragment.appendChild(item);
         } catch (error) {
           console.error('渲染ML预测历史项失败:', error);
@@ -643,14 +765,16 @@ export const record = {
   // ---------- 精选特码历史 ----------
   renderSpecialHistory: () => {
     const container = document.getElementById('specialHistoryList');
-    if (!container) return;
+    if (!container) {
+      console.warn('[Record] 容器不存在: specialHistoryList');
+      return;
+    }
     
     // 显示加载状态
     container.innerHTML = '<div class="loading-tip">加载中...</div>';
     
     try {
-      // 清除缓存，确保获取最新数据
-      Storage.clearCache('numberRecords');
+      // ✅ 直接获取数据，不清除缓存
       const specialRecords = Storage.get('numberRecords', []);
       
       if (!specialRecords.length) { 
@@ -658,22 +782,96 @@ export const record = {
         return;
       }
       
+      // ✅ 获取当前历史记录模式
+      const activeModeBtn = document.querySelector('.special-history-mode-btn.active');
+      const historyMode = activeModeBtn ? activeModeBtn.dataset.mode : 'all';
+      
+      // ✅ 根据模式筛选记录
+      let filteredRecords = specialRecords;
+      if (historyMode !== 'all') {
+        filteredRecords = specialRecords.filter(rec => {
+          if (historyMode === 'hot') {
+            // 热号模式：显示mode='hot'或mode='auto-hot'的记录
+            return rec.mode === 'hot' || rec.type === 'auto-hot';
+          } else if (historyMode === 'cold') {
+            // 冷号模式：显示mode='cold'或mode='auto-cold'的记录
+            return rec.mode === 'cold' || rec.type === 'auto-cold';
+          }
+          return true;
+        });
+      }
+      
       const fragment = document.createDocumentFragment();
-      specialRecords.forEach((rec, idx) => {
+      filteredRecords.forEach((rec, idx) => {
         try {
           const dateStr = rec.createdAt ? new Date(rec.createdAt).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
-          const numbers = Array.isArray(rec.numbers) ? rec.numbers : [];
+          
+          // ✅ 根据当前历史记录模式决定显示哪些号码
+          let displayNumbers = [];
+          let modeLabel = '';
+          
+          if (historyMode === 'hot' && rec.hotNumbers && rec.hotNumbers.length > 0) {
+            // 热号模式：优先显示热号
+            displayNumbers = rec.hotNumbers;
+            modeLabel = '<span style="font-size:11px;color:#ff6b6b;margin-left:8px;">🔥 热号</span>';
+          } else if (historyMode === 'cold' && rec.coldNumbers && rec.coldNumbers.length > 0) {
+            // 冷号模式：优先显示冷号
+            displayNumbers = rec.coldNumbers;
+            modeLabel = '<span style="font-size:11px;color:#4dabf7;margin-left:8px;">❄️ 冷号</span>';
+          } else {
+            // 全部模式或没有对应数据：显示实际保存的号码
+            displayNumbers = Array.isArray(rec.numbers) ? rec.numbers : [];
+            // 添加模式标识
+            if (rec.mode === 'hot') {
+              modeLabel = '<span style="font-size:11px;color:#ff6b6b;margin-left:8px;">🔥</span>';
+            } else if (rec.mode === 'cold') {
+              modeLabel = '<span style="font-size:11px;color:#4dabf7;margin-left:8px;">❄️</span>';
+            } else if (rec.mode === 'auto') {
+              modeLabel = '<span style="font-size:11px;color:#9c36b5;margin-left:8px;">🤖</span>';
+            }
+          }
+          
+          // ✅ 构建元数据显示（期数范围和号码数量）
+          let metaInfo = '';
+          if (rec.meta) {
+            const periodText = rec.meta.period === 'all' ? '全年' : `${rec.meta.period}期`;
+            const countText = `${rec.meta.count}个`;
+            metaInfo = `<div class="history-meta" style="font-size:11px;color:#999;margin-top:4px;display:flex;gap:8px;align-items:center;">
+              <span>📊 ${periodText}</span>
+              <span>🎯 ${countText}</span>
+            </div>`;
+          }
+          
+          // ✅ 构建核对状态标识
+          let checkStatusHtml = '';
+          if (rec.checked) {
+            const statusClass = rec.matched ? 'history-tag-matched' : 'history-tag-miss';
+            const statusText = rec.matched ? '✅ 命中' : '❌ 未中';
+            checkStatusHtml = `<div class="history-check-status ${statusClass}" style="font-size:11px;margin-top:4px;">${statusText}</div>`;
+          }
+          
           const item = document.createElement('div');
           item.className = 'history-item';
+          item.dataset.index = idx;
           item.innerHTML = `
             <div class="history-header">
-              <div class="history-nums">第${rec.issue || ''}期 精选特码</div>
+              <div class="history-nums">第${rec.issue || ''}期 精选特码${modeLabel}</div>
               <div class="history-time">${dateStr}</div>
             </div>
             <div class="history-tags">
-              ${numbers.map(n => `<div class="history-tag">${escapeHtml(n)}</div>`).join('')}
+              <div class="history-tags-predicted">
+              ${displayNumbers.map(n => `<div class="history-tag">${escapeHtml(n)}</div>`).join('')}
+              </div>
             </div>
+            ${metaInfo}
+            ${checkStatusHtml}
           `;
+          
+          // 绑定触摸事件
+          record._bindSwipeDeleteToItem(item, idx, 'special', () => {
+            record._deleteSpecialRecord(rec.issue);
+          });
+          
           fragment.appendChild(item);
         } catch (error) {
           console.error('渲染精选特码历史项失败:', error);
@@ -681,6 +879,14 @@ export const record = {
       });
       container.innerHTML = '';
       container.appendChild(fragment);
+      
+      // ✅ 如果没有符合条件的记录
+      if (filteredRecords.length === 0) {
+        container.innerHTML = `<div class="empty-tip">暂无${historyMode === 'hot' ? '热号' : '冷号'}模式的历史记录</div>`;
+      }
+      
+      // ✅ 应用折叠/展开逻辑
+      record._applyCollapseLogic('specialHistoryList', 'specialHistoryToggle', 'special');
     } catch (error) {
       console.error('加载精选特码历史失败:', error);
       container.innerHTML = '<div class="error-tip">加载失败，请点击刷新重试</div>';
@@ -697,14 +903,16 @@ export const record = {
   // ---------- 特码热门TOP5历史 ----------
   renderHotNumbersHistory: () => {
     const container = document.getElementById('hotNumbersHistoryList');
-    if (!container) return;
+    if (!container) {
+      console.warn('[Record] 容器不存在: hotNumbersHistoryList');
+      return;
+    }
     
     // 显示加载状态
     container.innerHTML = '<div class="loading-tip">加载中...</div>';
     
     try {
-      // 清除缓存，确保获取最新数据
-      Storage.clearCache('hotNumbersRecords');
+      // ✅ 直接获取数据，不清除缓存
       const hotRecords = Storage.get('hotNumbersRecords', []);
       
       if (!hotRecords.length) { 
@@ -717,17 +925,36 @@ export const record = {
         try {
           const dateStr = rec.createdAt ? new Date(rec.createdAt).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
           const numbers = Array.isArray(rec.numbers) ? rec.numbers : [];
+          
+          // ✅ 构建核对状态标识
+          let checkStatusHtml = '';
+          if (rec.checked) {
+            const statusClass = rec.matched ? 'history-tag-matched' : 'history-tag-miss';
+            const statusText = rec.matched ? '✅ 命中' : '❌ 未中';
+            checkStatusHtml = `<div class="history-check-status ${statusClass}" style="font-size:11px;margin-top:4px;">${statusText}</div>`;
+          }
+          
           const item = document.createElement('div');
           item.className = 'history-item';
+          item.dataset.index = idx;
           item.innerHTML = `
             <div class="history-header">
               <div class="history-nums">第${rec.issue || ''}期 热门TOP5</div>
               <div class="history-time">${dateStr}</div>
             </div>
             <div class="history-tags">
+              <div class="history-tags-predicted">
               ${numbers.map(n => `<div class="history-tag">${escapeHtml(n)}</div>`).join('')}
+              </div>
             </div>
+            ${checkStatusHtml}
           `;
+          
+          // 绑定触摸事件
+          record._bindSwipeDeleteToItem(item, idx, 'hotNumbers', () => {
+            record._deleteHotNumbersRecord(rec.issue);
+          });
+          
           fragment.appendChild(item);
         } catch (error) {
           console.error('渲染特码热门TOP5历史项失败:', error);
@@ -735,6 +962,9 @@ export const record = {
       });
       container.innerHTML = '';
       container.appendChild(fragment);
+      
+      // ✅ 应用折叠/展开逻辑
+      record._applyCollapseLogic('hotNumbersHistoryList', 'hotNumbersHistoryToggle', 'hotNumbers');
     } catch (error) {
       console.error('加载特码热门TOP5历史失败:', error);
       container.innerHTML = '<div class="error-tip">加载失败，请点击刷新重试</div>';
@@ -812,8 +1042,12 @@ export const record = {
     const buttons = document.querySelectorAll('.special-history-mode-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
     document.querySelector(`.special-history-mode-btn[data-mode="${mode}"]`)?.classList.add('active');
-    // 这里可以添加模式切换逻辑
-    Toast.show(`已切换到${mode === 'hot' ? '热号' : mode === 'cold' ? '冷号' : '全部'}模式`);
+    
+    // ✅ 重新渲染历史记录，根据新模式筛选
+    record.renderSpecialHistory();
+    
+    // 显示提示
+    Toast.show(`已切换到${mode === 'hot' ? '🔥 热号' : mode === 'cold' ? '❄️ 冷号' : '全部'}模式`);
   },
 
   // ---------- 展开/收起操作 ----------
@@ -824,6 +1058,17 @@ export const record = {
   toggleMLPredictionHistory: () => {
     // 加载更多数据
     record.renderMLPredictionHistory(true);
+  },
+  
+  // ✅ 折叠/展开切换
+  toggleSelectedZodiacCollapse: () => {
+    record._toggleCollapse('selectedZodiac', 'selectedZodiacHistoryList', 'selectedZodiacHistoryToggle');
+  },
+  toggleSpecialCollapse: () => {
+    record._toggleCollapse('special', 'specialHistoryList', 'specialHistoryToggle');
+  },
+  toggleHotNumbersCollapse: () => {
+    record._toggleCollapse('hotNumbers', 'hotNumbersHistoryList', 'hotNumbersHistoryToggle');
   },
 
   // ---------- 兼容 prediction.js 和 data-fetch.js 调用的方法 ----------
@@ -945,6 +1190,19 @@ export const record = {
     }
     return result;
   },
+  
+  /**
+   * ✅ 核对待码热门TOP5记录
+   * @param {string} issue - 期号
+   * @param {Array} actualNumbers - 实际开奖号码
+   */
+  checkHotNumbersRecord: (issue, actualNumbers) => {
+    const result = Storage.checkHotNumbersRecord(issue, actualNumbers);
+    if (result.success) {
+      record.renderHotNumbersHistory();
+    }
+    return result;
+  },
   loadZodiacRecords: () => {
     record.renderZodiacPredictionHistory();
     record.renderSelectedZodiacHistory();
@@ -978,7 +1236,7 @@ export const record = {
               <button class="btn-mini period-btn" data-period="all">全年</button>
             </div>
           </div>
-          <div id="statisticsContent">
+          <div id="statisticsContent" style="min-height:280px;padding-bottom:20px;">
             <div style="display:flex;justify-content:center;align-items:center;padding:40px;">
               <div style="text-align:center;">
                 <div style="font-size:48px;margin-bottom:12px;">📊</div>
@@ -998,6 +1256,11 @@ export const record = {
         modal.style.opacity = '1';
         content.style.transform = 'scale(1)';
       }, 10);
+      
+      // ✅ 默认加载10期统计数据
+      setTimeout(() => {
+        record.loadPeriodStatistics(type, '10', content.querySelector('#statisticsContent'));
+      }, 100);
       
       // 绑定周期按钮点击事件
       const periodBtns = content.querySelectorAll('.period-btn');
@@ -1043,18 +1306,40 @@ export const record = {
         </div>
       `;
       
-      // 模拟加载延迟
+      // 延迟一下，让加载动画显示
       setTimeout(() => {
-        // 生成模拟数据
-        const stats = {
-          hit: Math.floor(Math.random() * 10) + 1,
-          miss: Math.floor(Math.random() * 20) + 5,
-          pending: Math.floor(Math.random() * 5) + 1,
-          hitRate: (Math.random() * 50 + 10).toFixed(1)
-        };
+        // ✅ 获取真实数据
+        const allRecords = Storage.get('zodiacRecords', []);
         
-        // 计算总记录数
-        const total = stats.hit + stats.miss + stats.pending;
+        // 根据类型筛选记录
+        let records = type === 'selected' 
+          ? allRecords.filter(r => r.recordType === 'selected')
+          : allRecords.filter(r => !r.recordType || r.recordType !== 'selected');
+        
+        // 根据周期筛选
+        if (period !== 'all') {
+          const periodNum = parseInt(period);
+          // 只取已核对的记录，按 createdAt 排序，取最近的 N 期
+          const checkedRecords = records.filter(r => r.checked === true)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, periodNum);
+          records = checkedRecords;
+        } else {
+          // 全年：只取已核对的记录
+          records = records.filter(r => r.checked === true);
+        }
+        
+        // 统计数据
+        let hit = 0, miss = 0;
+        records.forEach(rec => {
+          if (rec.matched === true) hit++;
+          else if (rec.matched === false) miss++;
+        });
+        
+        const total = records.length;
+        const hitRate = hit + miss > 0 ? ((hit / (hit + miss)) * 100).toFixed(1) : '0.0';
+        
+        console.log(`[Statistics] ${type} - ${period}期:`, { total, hit, miss, hitRate });
         
         // 渲染统计数据
         container.innerHTML = `
@@ -1074,15 +1359,15 @@ export const record = {
               </div>
               <div style="background:var(--card);border-radius:8px;padding:12px;border:1px solid var(--border);">
                 <div style="font-size:12px;color:var(--sub-text);margin-bottom:4px;">命中</div>
-                <div style="font-size:18px;font-weight:600;color:var(--green);">${stats.hit}</div>
+                <div style="font-size:18px;font-weight:600;color:var(--green);">${hit}</div>
               </div>
               <div style="background:var(--card);border-radius:8px;padding:12px;border:1px solid var(--border);">
                 <div style="font-size:12px;color:var(--sub-text);margin-bottom:4px;">未中</div>
-                <div style="font-size:18px;font-weight:600;color:var(--danger);">${stats.miss}</div>
+                <div style="font-size:18px;font-weight:600;color:var(--danger);">${miss}</div>
               </div>
               <div style="background:var(--card);border-radius:8px;padding:12px;border:1px solid var(--border);">
                 <div style="font-size:12px;color:var(--sub-text);margin-bottom:4px;">命中率</div>
-                <div style="font-size:18px;font-weight:600;color:var(--primary);">${stats.hitRate}%</div>
+                <div style="font-size:18px;font-weight:600;color:var(--primary);">${hitRate}%</div>
               </div>
             </div>
           </div>
@@ -1103,12 +1388,12 @@ export const record = {
             <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text);">详细数据</div>
             <div style="background:var(--card);border-radius:8px;padding:16px;border:1px solid var(--border);">
               <div style="font-size:13px;color:var(--sub-text);text-align:center;padding:20px;">
-                ${period === 'all' ? '全年' : period + '期'}详细数据列表
+                ${total > 0 ? `共 ${total} 条记录，命中 ${hit} 次，未中 ${miss} 次` : '暂无数据'}
               </div>
             </div>
           </div>
         `;
-      }, 800);
+      }, 300);
     } catch (e) {
       console.error('加载统计数据失败', e);
       container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);">加载失败，请重试</div>';
@@ -1164,6 +1449,14 @@ export const record = {
         record.showDetailedStatistics(type);
       }
       
+      // ✅ 滚动到精选生肖历史
+      if (action === 'scrollToSelectedHistory') {
+        const selectedHistorySection = document.getElementById('selectedZodiacHistorySection');
+        if (selectedHistorySection) {
+          selectedHistorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+      
       // 精选特码历史相关
       if (action === 'clearSpecialHistory') record.clearSpecialHistory();
       if (action === 'toggleSpecialFiltersPanel') record.toggleSpecialFiltersPanel();
@@ -1172,6 +1465,11 @@ export const record = {
       
       // 特码热门TOP5历史相关
       if (action === 'clearHotNumbersHistory') record.clearHotNumbersHistory();
+      
+      // ✅ 折叠/展开切换
+      if (action === 'toggleSelectedZodiacCollapse') record.toggleSelectedZodiacCollapse();
+      if (action === 'toggleSpecialCollapse') record.toggleSpecialCollapse();
+      if (action === 'toggleHotNumbersCollapse') record.toggleHotNumbersCollapse();
     });
     
     // 期数按钮点击事件（单选模式）- 使用事件委托，避免与上面的冲突
@@ -1242,8 +1540,7 @@ export const record = {
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
         console.log('[Record] 页面变为可见，刷新数据');
-        // 清除缓存并重新渲染
-        Storage.clearCache('zodiacRecords');
+        // ✅ 直接重新渲染，不清除缓存（提升性能）
         record.renderZodiacPredictionHistory();
         record.renderSelectedZodiacHistory();
         record.renderPredictionStatistics();
@@ -1251,6 +1548,251 @@ export const record = {
     });
     
     console.log('[Record] 事件绑定完成');
+  },
+
+  /**
+   * 绑定滑动删除事件到历史记录项
+   * 使用事件委托优化性能，避免为每个元素单独绑定
+   * @param {HTMLElement} item - 历史记录项元素
+   * @param {number} idx - 索引
+   * @param {string} type - 类型（selectedZodiac/zodiacPrediction/mlPrediction/special/hotNumbers）
+   * @param {Function} deleteCallback - 删除回调函数
+   */
+  _bindSwipeDeleteToItem: (item, idx, type, deleteCallback) => {
+    if (!item || typeof deleteCallback !== 'function') {
+      console.warn('[Record] 无效的滑动删除参数');
+      return;
+    }
+    
+    const handler = Utils.SwipeDeleteHandler;
+    
+    // 使用 passive 选项优化触摸性能
+    const touchStartHandler = (e) => handler.handleTouchStart(e, idx, type);
+    const touchMoveHandler = (e) => handler.handleTouchMove(e, idx, type);
+    const touchEndHandler = (e) => handler.handleTouchEnd(e, idx, type, deleteCallback);
+    
+    item.addEventListener('touchstart', touchStartHandler, { passive: true });
+    item.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    item.addEventListener('touchend', touchEndHandler, { passive: true });
+    
+    // 存储处理器引用，便于后续清理（防止内存泄漏）
+    record._swipeHandlers.set(item, {
+      touchStartHandler,
+      touchMoveHandler,
+      touchEndHandler
+    });
+  },
+  
+  /**
+   * 清理滑动删除事件绑定（防止内存泄漏）
+   * @param {HTMLElement} item - 要清理的元素
+   */
+  _unbindSwipeDelete: (item) => {
+    if (!item) return;
+    
+    const handlers = record._swipeHandlers.get(item);
+    if (handlers) {
+      item.removeEventListener('touchstart', handlers.touchStartHandler);
+      item.removeEventListener('touchmove', handlers.touchMoveHandler);
+      item.removeEventListener('touchend', handlers.touchEndHandler);
+      record._swipeHandlers.delete(item);
+    }
+  },
+
+  /**
+   * 删除精选生肖记录
+   * @param {number} index - 记录索引
+   */
+  _deleteSelectedZodiacRecord: (index) => {
+    try {
+      if (typeof index !== 'number' || index < 0) {
+        console.warn('[Record] 无效的索引:', index);
+        return;
+      }
+      
+      const allRecords = Storage.get('zodiacRecords', []);
+      if (!Array.isArray(allRecords)) {
+        console.error('[Record] 数据格式错误');
+        Toast.show('数据异常，请刷新页面');
+        return;
+      }
+      
+      const selectedRecords = allRecords.filter(r => r.recordType === 'selected');
+      
+      if (!selectedRecords[index]) {
+        console.warn('[Record] 记录不存在:', index);
+        return;
+      }
+      
+      // 从总记录中移除
+      const recordToRemove = selectedRecords[index];
+      const filtered = allRecords.filter(r => !(r.recordType === 'selected' && r.createdAt === recordToRemove.createdAt));
+      
+      Storage.set('zodiacRecords', filtered);
+      StateManager.setState({ zodiacRecords: filtered }, false);
+      
+      // 重新渲染
+      record.renderSelectedZodiacHistory();
+      record.renderPredictionStatistics();
+      
+      Toast.show('已删除记录');
+    } catch (error) {
+      console.error('[Record] 删除精选生肖记录失败:', error);
+      Toast.show('删除失败，请重试');
+    }
+  },
+
+  /**
+   * 删除生肖预测记录
+   * @param {string} issue - 期号
+   */
+  _deleteZodiacPredictionRecord: (issue) => {
+    try {
+      if (!issue || typeof issue !== 'string') {
+        console.warn('[Record] 无效的期号:', issue);
+        return;
+      }
+      
+      const allRecords = Storage.get('zodiacRecords', []);
+      if (!Array.isArray(allRecords)) {
+        console.error('[Record] 数据格式错误');
+        Toast.show('数据异常，请刷新页面');
+        return;
+      }
+      
+      const filtered = allRecords.filter(r => !(r.issue === issue && (!r.recordType || r.recordType !== 'selected')));
+      
+      if (filtered.length === allRecords.length) {
+        console.warn('[Record] 未找到要删除的记录:', issue);
+        return;
+      }
+      
+      Storage.set('zodiacRecords', filtered);
+      StateManager.setState({ zodiacRecords: filtered }, false);
+      
+      // 重新渲染
+      record.renderZodiacPredictionHistory();
+      record.renderPredictionStatistics();
+      
+      Toast.show('已删除记录');
+    } catch (error) {
+      console.error('[Record] 删除生肖预测记录失败:', error);
+      Toast.show('删除失败，请重试');
+    }
+  },
+
+  /**
+   * 删除ML预测记录
+   * @param {string} issue - 期号
+   */
+  _deleteMLPredictionRecord: (issue) => {
+    try {
+      if (!issue || typeof issue !== 'string') {
+        console.warn('[Record] 无效的期号:', issue);
+        return;
+      }
+      
+      const mlRecords = Storage.get('mlPredictionRecords', []);
+      if (!Array.isArray(mlRecords)) {
+        console.error('[Record] 数据格式错误');
+        Toast.show('数据异常，请刷新页面');
+        return;
+      }
+      
+      const originalLength = mlRecords.length;
+      const filtered = mlRecords.filter(r => r.issue !== issue);
+      
+      if (filtered.length === originalLength) {
+        console.warn('[Record] 未找到要删除的记录:', issue);
+        return;
+      }
+      
+      Storage.set('mlPredictionRecords', filtered);
+      
+      // 重新渲染
+      record.renderMLPredictionHistory();
+      
+      Toast.show('已删除记录');
+    } catch (error) {
+      console.error('[Record] 删除ML预测记录失败:', error);
+      Toast.show('删除失败，请重试');
+    }
+  },
+
+  /**
+   * 删除精选特码记录
+   * @param {string} issue - 期号
+   */
+  _deleteSpecialRecord: (issue) => {
+    try {
+      if (!issue || typeof issue !== 'string') {
+        console.warn('[Record] 无效的期号:', issue);
+        return;
+      }
+      
+      const numberRecords = Storage.get('numberRecords', []);
+      if (!Array.isArray(numberRecords)) {
+        console.error('[Record] 数据格式错误');
+        Toast.show('数据异常，请刷新页面');
+        return;
+      }
+      
+      const originalLength = numberRecords.length;
+      const filtered = numberRecords.filter(r => r.issue !== issue);
+      
+      if (filtered.length === originalLength) {
+        console.warn('[Record] 未找到要删除的记录:', issue);
+        return;
+      }
+      
+      Storage.set('numberRecords', filtered);
+      
+      // 重新渲染
+      record.renderSpecialHistory();
+      
+      Toast.show('已删除记录');
+    } catch (error) {
+      console.error('[Record] 删除精选特码记录失败:', error);
+      Toast.show('删除失败，请重试');
+    }
+  },
+
+  /**
+   * 删除特码热门TOP5记录
+   * @param {string} issue - 期号
+   */
+  _deleteHotNumbersRecord: (issue) => {
+    try {
+      if (!issue || typeof issue !== 'string') {
+        console.warn('[Record] 无效的期号:', issue);
+        return;
+      }
+      
+      const hotRecords = Storage.get('hotNumbersRecords', []);
+      if (!Array.isArray(hotRecords)) {
+        console.error('[Record] 数据格式错误');
+        Toast.show('数据异常，请刷新页面');
+        return;
+      }
+      
+      const originalLength = hotRecords.length;
+      const filtered = hotRecords.filter(r => r.issue !== issue);
+      
+      if (filtered.length === originalLength) {
+        console.warn('[Record] 未找到要删除的记录:', issue);
+        return;
+      }
+      
+      Storage.set('hotNumbersRecords', filtered);
+      
+      // 重新渲染
+      record.renderHotNumbersHistory();
+      
+      Toast.show('已删除记录');
+    } catch (error) {
+      console.error('[Record] 删除特码热门TOP5记录失败:', error);
+      Toast.show('删除失败，请重试');
+    }
   }
 };
 

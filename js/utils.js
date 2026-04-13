@@ -248,18 +248,238 @@ export const Utils = {
   },
 
   /**
-   * 左滑删除处理器（精选特码历史）
+   * 左滑删除处理器（通用版）
+   * 支持所有历史记录容器的左滑删除功能
+   * @namespace SwipeDeleteHandler
    */
-  SwipeDeleteHandler: null, // 将在下面初始化
+  SwipeDeleteHandler: {
+    _startX: {},
+    _startY: {},
+    _currentX: {},
+    _currentY: {},
+    _startTime: {},
+    _threshold: 100, // 触发删除的滑动距离阈值（100px）
+    _directionThreshold: 20, // 方向判断阈值（20px）
+    _maxAngle: 35, // 最大允许角度（35度）
+    _isHorizontal: {},
+    _hasDirection: {},
+    _isLeftSwipe: {}, // 是否为向左滑动
 
-  /**
-   * 左滑复制处理器（精选生肖历史-旧版）
-   */
-  SwipeCopyHandler: null, // 将在下面初始化
+    // 计算滑动角度
+    _getSwipeAngle: (deltaX, deltaY) => {
+      const angle = Math.atan2(Math.abs(deltaY), Math.abs(deltaX)) * 180 / Math.PI;
+      return angle;
+    },
 
-  /**
-   * 右滑复制处理器（精选特码/生肖历史）
-   */
+    // 显示删除指示器
+    _showDeleteIndicator: (item, progress) => {
+      if (!item) return;
+      
+      let indicator = item.querySelector('.swipe-delete-indicator');
+      if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.className = 'swipe-delete-indicator';
+        indicator.style.cssText = `
+          position: absolute;
+          right: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          background: linear-gradient(to bottom, #ff3b30, #ff453a);
+          transform: scaleY(0);
+          transform-origin: top;
+          transition: transform 0.1s ease-out;
+          z-index: 10;
+          border-radius: 2px;
+          pointer-events: none;
+        `;
+        item.appendChild(indicator);
+      }
+      indicator.style.transform = `scaleY(${Math.min(progress, 1)})`;
+    },
+
+    // 隐藏删除指示器
+    _hideDeleteIndicator: (item) => {
+      if (!item) return;
+      
+      const indicator = item.querySelector('.swipe-delete-indicator');
+      if (indicator) {
+        indicator.style.transform = 'scaleY(0)';
+        setTimeout(() => {
+          if (indicator.parentNode) {
+            indicator.remove();
+          }
+        }, 200);
+      }
+    },
+
+    // 执行删除操作
+    _performDelete: async (item, deleteCallback) => {
+      try {
+        if (!item || !deleteCallback || typeof deleteCallback !== 'function') {
+          console.error('[Utils] 删除参数无效');
+          return false;
+        }
+
+        // 添加删除动画
+        item.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out, max-height 0.3s ease-out';
+        item.style.transform = 'translateX(-100%)';
+        item.style.opacity = '0';
+        item.style.maxHeight = item.offsetHeight + 'px';
+
+        // 等待动画完成后执行删除
+        setTimeout(() => {
+          item.style.maxHeight = '0';
+          item.style.marginTop = '0';
+          item.style.marginBottom = '0';
+          item.style.paddingTop = '0';
+          item.style.paddingBottom = '0';
+          item.style.overflow = 'hidden';
+          
+          setTimeout(() => {
+            try {
+              deleteCallback();
+            } catch (error) {
+              console.error('[Utils] 删除回调执行失败:', error);
+            }
+          }, 300);
+        }, 300);
+
+        return true;
+      } catch (e) {
+        console.error('[Utils] 删除失败', e);
+        return false;
+      }
+    },
+
+    handleTouchStart: function(e, idx, prefix) {
+      if (!e || !e.touches || e.touches.length === 0) return;
+      
+      const key = `${prefix}_${idx}`;
+      const touch = e.touches[0];
+      
+      Utils.SwipeDeleteHandler._startX[key] = touch.clientX;
+      Utils.SwipeDeleteHandler._startY[key] = touch.clientY;
+      Utils.SwipeDeleteHandler._currentX[key] = touch.clientX;
+      Utils.SwipeDeleteHandler._currentY[key] = touch.clientY;
+      Utils.SwipeDeleteHandler._startTime[key] = Date.now();
+      Utils.SwipeDeleteHandler._isHorizontal[key] = false;
+      Utils.SwipeDeleteHandler._hasDirection[key] = false;
+      Utils.SwipeDeleteHandler._isLeftSwipe[key] = false;
+    },
+
+    handleTouchMove: function(e, idx, prefix) {
+      const key = `${prefix}_${idx}`;
+      if (Utils.SwipeDeleteHandler._startX[key] === undefined) return;
+      
+      if (!e || !e.touches || e.touches.length === 0) return;
+      
+      const touch = e.touches[0];
+      Utils.SwipeDeleteHandler._currentX[key] = touch.clientX;
+      Utils.SwipeDeleteHandler._currentY[key] = touch.clientY;
+      
+      const deltaX = touch.clientX - Utils.SwipeDeleteHandler._startX[key];
+      const deltaY = touch.clientY - Utils.SwipeDeleteHandler._startY[key];
+      const absDeltaX = Math.abs(deltaX);
+      const absDeltaY = Math.abs(deltaY);
+      
+      // 方向判断阶段（低延迟，20px阈值）
+      if (!Utils.SwipeDeleteHandler._hasDirection[key]) {
+        if (absDeltaX > Utils.SwipeDeleteHandler._directionThreshold || 
+            absDeltaY > Utils.SwipeDeleteHandler._directionThreshold) {
+          Utils.SwipeDeleteHandler._hasDirection[key] = true;
+          
+          // 计算滑动角度
+          const angle = Utils.SwipeDeleteHandler._getSwipeAngle(deltaX, deltaY);
+          
+          // 判断是否为水平滑动且角度在允许范围内
+          const isHorizontal = absDeltaX > absDeltaY && angle <= Utils.SwipeDeleteHandler._maxAngle;
+          Utils.SwipeDeleteHandler._isHorizontal[key] = isHorizontal;
+          Utils.SwipeDeleteHandler._isLeftSwipe[key] = deltaX < 0; // 向左滑动
+          
+          // 如果不是向左滑动，不处理
+          if (!isHorizontal || deltaX >= 0) {
+            return;
+          }
+        }
+      }
+      
+      // 如果不是向左滑动，不处理
+      if (!Utils.SwipeDeleteHandler._isHorizontal[key] || 
+          !Utils.SwipeDeleteHandler._isLeftSwipe[key]) {
+        return;
+      }
+      
+      // 阻止默认行为
+      e.preventDefault();
+      
+      const item = e.currentTarget;
+      if (!item) return;
+      
+      // 计算滑动进度（0-1）
+      const progress = Math.min(absDeltaX / Utils.SwipeDeleteHandler._threshold, 1);
+      
+      // 显示删除指示器
+      Utils.SwipeDeleteHandler._showDeleteIndicator(item, progress);
+      
+      // 添加视觉反馈 - 轻微左移
+      const translateX = Math.max(deltaX * 0.5, -80); // 最大移动80px
+      item.style.transform = `translateX(${translateX}px)`;
+      item.style.transition = 'transform 0.05s ease-out';
+      
+      // 达到阈值时改变指示器颜色
+      const indicator = item.querySelector('.swipe-delete-indicator');
+      if (indicator && absDeltaX >= Utils.SwipeDeleteHandler._threshold) {
+        indicator.style.background = 'linear-gradient(to bottom, #ff453a, #ff3b30)';
+        indicator.style.boxShadow = '0 0 8px rgba(255, 59, 48, 0.6)';
+      }
+    },
+
+    handleTouchEnd: function(e, idx, prefix, deleteCallback) {
+      const key = `${prefix}_${idx}`;
+      const item = e.currentTarget;
+      
+      // 恢复内容位置
+      item.style.transform = 'translateX(0)';
+      item.style.transition = 'transform 0.3s ease-out';
+      
+      // 如果不是向左滑动，直接清理
+      if (!Utils.SwipeDeleteHandler._isHorizontal[key] || 
+          !Utils.SwipeDeleteHandler._isLeftSwipe[key]) {
+        Utils.SwipeDeleteHandler._hideDeleteIndicator(item);
+        Utils.SwipeDeleteHandler._cleanup(key);
+        return;
+      }
+      
+      const deltaX = Utils.SwipeDeleteHandler._currentX[key] - Utils.SwipeDeleteHandler._startX[key];
+      const deltaTime = Date.now() - Utils.SwipeDeleteHandler._startTime[key];
+      
+      // 判断是否达到触发条件（距离阈值 或 快速滑动）
+      const isQuickSwipe = deltaTime < 200 && deltaX < -40; // 快速滑动（200ms内40px）
+      const isLongSwipe = deltaX <= -Utils.SwipeDeleteHandler._threshold; // 长距离滑动
+      
+      if (isQuickSwipe || isLongSwipe) {
+        // 执行删除
+        Utils.SwipeDeleteHandler._performDelete(item, deleteCallback);
+      }
+      
+      // 隐藏指示器并清理
+      Utils.SwipeDeleteHandler._hideDeleteIndicator(item);
+      Utils.SwipeDeleteHandler._cleanup(key);
+    },
+
+    // 清理状态
+    _cleanup: (key) => {
+      delete Utils.SwipeDeleteHandler._startX[key];
+      delete Utils.SwipeDeleteHandler._startY[key];
+      delete Utils.SwipeDeleteHandler._currentX[key];
+      delete Utils.SwipeDeleteHandler._currentY[key];
+      delete Utils.SwipeDeleteHandler._startTime[key];
+      delete Utils.SwipeDeleteHandler._isHorizontal[key];
+      delete Utils.SwipeDeleteHandler._hasDirection[key];
+      delete Utils.SwipeDeleteHandler._isLeftSwipe[key];
+    }
+  },
 
   /**
    * 向右滑动复制处理器（优化版）
@@ -821,5 +1041,41 @@ export const Utils = {
     };
     
     return text.split('').map(char => simplifiedToTraditionalMap[char] || char).join('');
+  },
+
+  /**
+   * 全局错误处理器
+   * @param {Error} error - 错误对象
+   * @param {string} context - 错误上下文
+   */
+  handleError: (error, context = 'Unknown') => {
+    console.error(`[${context}]`, error);
+    
+    // 在开发环境下显示详细错误信息
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      console.trace();
+    }
+    
+    // 可以在这里集成错误上报服务
+    // sendErrorReport(error, context);
+  },
+
+  /**
+   * 性能监控：测量函数执行时间
+   * @param {Function} fn - 要测量的函数
+   * @param {string} label - 标签名称
+   * @returns {*} 函数返回值
+   */
+  measurePerformance: (fn, label = 'Performance') => {
+    const start = performance.now();
+    try {
+      const result = fn();
+      const end = performance.now();
+      console.log(`[${label}] 执行时间: ${(end - start).toFixed(2)}ms`);
+      return result;
+    } catch (error) {
+      Utils.handleError(error, label);
+      throw error;
+    }
   }
 };

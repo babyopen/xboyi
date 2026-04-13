@@ -174,6 +174,16 @@ export const analysis = {
       const curExpect = document.getElementById('curExpect');
       if(latestBalls) latestBalls.innerHTML = html;
       if(curExpect) curExpect.innerText = item.expect || '--';
+      
+      // ✅ 自动核对所有未核对的记录
+      if (item.expect && s?.zod) {
+        setTimeout(() => {
+          Storage.autoCheckAllRecords({
+            issue: item.expect,
+            zodiac: s.zod
+          });
+        }, 500); // 延迟500ms，确保数据已保存
+      }
     } catch(e) {
       console.error('渲染最新开奖失败:', e);
     }
@@ -731,7 +741,7 @@ export const analysis = {
     const activeBtn = document.querySelector(`.special-mode-btn[data-mode="${mode}"]`);
     if(activeBtn) activeBtn.classList.add('active');
     
-    // 重新分析
+    // 重新分析（会自动触发渲染和保存）
     analysis.renderZodiacAnalysis();
   },
 
@@ -740,62 +750,5 @@ export const analysis = {
    */
   startScheduledDataFetch: () => {
     return dataFetch.startScheduledDataFetch();
-  },
-
-  /**
-   * 保存号码记录
-   */
-  saveNumberRecord: () => {
-    try {
-      const contentElement = document.getElementById('zodiacFinalNumContent');
-      if (!contentElement) {
-        Toast.show('未找到号码数据');
-        return;
-      }
-
-      // 提取号码
-      const balls = contentElement.querySelectorAll('.ball-item .ball');
-      if (balls.length === 0) {
-        Toast.show('未找到号码');
-        return;
-      }
-
-      const numbers = Array.from(balls).map(ball => ball.textContent.trim());
-      if (numbers.length === 0) {
-        Toast.show('未找到号码');
-        return;
-      }
-
-      // 获取当前期号
-      const curExpectElement = document.getElementById('curExpect');
-      const issue = curExpectElement ? curExpectElement.textContent.trim() : '';
-      if (!issue) {
-        Toast.show('未找到期号');
-        return;
-      }
-
-      // 确定号码类型（热号/冷号）
-      const activeModeBtn = document.querySelector('.mode-btn.active');
-      const mode = activeModeBtn ? activeModeBtn.dataset.mode : 'auto';
-      const type = mode === 'hot' ? 'hot' : mode === 'cold' ? 'cold' : 'auto';
-
-      // 保存记录
-      import('./record.js').then(({ record }) => {
-        const recordData = {
-          issue: issue,
-          numbers: numbers,
-          type: type
-        };
-        const success = record.saveNumberRecord(recordData);
-        if (success) {
-          Toast.show('号码记录保存成功');
-        } else {
-          Toast.show('号码记录保存失败');
-        }
-      });
-    } catch (error) {
-      console.error('保存号码记录失败:', error);
-      Toast.show('保存失败，请重试');
-    }
   }
 };

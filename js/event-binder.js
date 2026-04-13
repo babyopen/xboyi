@@ -214,6 +214,7 @@ export const EventBinder = {
       if(action === CONFIG.ACTIONS.RENAME_FILTER) Business.renameFilter(Number(index));
       if(action === CONFIG.ACTIONS.COPY_FILTER) Business.copyFilterNums(Number(index));
       if(action === CONFIG.ACTIONS.TOP_FILTER) Business.topFilter(Number(index));
+      if(action === CONFIG.ACTIONS.DELETE_FILTER) Business.deleteFilter(Number(index));
       // 收藏操作
       if(action === 'favoriteFilter') Business.favoriteFilter(Number(index));
       if(action === 'loadFavorite') Business.loadFavorite(Number(index));
@@ -246,7 +247,6 @@ export const EventBinder = {
       if(action === 'copyZodiacNumbers') Business.copyZodiacNumbers();
       if(action === 'copySelectedZodiacs') Business.copySelectedZodiacs();
       if(action === 'favoriteZodiacNumbers') Business.favoriteZodiacNumbers();
-      if(action === 'saveNumberRecord') Business.saveNumberRecord();
       if(action === 'refreshHotCold') Business.refreshHotCold();
       // 显示连出详情
       if(action === 'showStreakDetail') Business.showStreakDetail(actionBtn.dataset.streakType);

@@ -87,6 +87,7 @@ export const CONFIG = Object.freeze({
     RENAME_FILTER: 'renameFilter',
     COPY_FILTER: 'copyFilterNums',
     TOP_FILTER: 'topFilter',
+    DELETE_FILTER: 'deleteFilter',
     // 导航操作
     SWITCH_NAV: 'switchBottomNav'
   })

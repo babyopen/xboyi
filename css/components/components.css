@@ -1,4 +1,67 @@
-/* 通用组件：按钮、卡片、标签、导航、弹窗、筛选等 */
+// ... existing code ...
+  // 动作枚举（避免硬编码字符串错误）
+  ACTIONS: Object.freeze({
+    // 分组操作
+    RESET_GROUP: 'resetGroup',
+    SELECT_GROUP: 'selectGroup',
+    INVERT_GROUP: 'invertGroup',
+    CLEAR_GROUP: 'clearGroup',
+    // 全局操作
+    SELECT_ALL: 'selectAllFilters',
+    CLEAR_ALL: 'clearAllFilters',
+    SAVE_FILTER: 'saveFilterPrompt',
+    // 排除号码操作
+    INVERT_EXCLUDE: 'invertExclude',
+    UNDO_EXCLUDE: 'undoExclude',
+    BATCH_EXCLUDE: 'batchExcludePrompt',
+    CLEAR_EXCLUDE: 'clearExclude',
+    // 方案操作
+    TOGGLE_SHOW_ALL: 'toggleShowAllFilters',
+    LOAD_FILTER: 'loadFilter',
+    RENAME_FILTER: 'renameFilter',
+    COPY_FILTER: 'copyFilterNums',
+    TOP_FILTER: 'topFilter',
+    DELETE_FILTER: 'deleteFilter',
+    // 导航操作
+    SWITCH_NAV: 'switchBottomNav'
+  })
+});
+// ... existing code ...// ... existing code ...
+        const isFavorited = state.favorites.some(fav => fav.name === item.name);
+        const itemWrapper = document.createElement('div');
+        itemWrapper.className = 'filter-item';
+        itemWrapper.setAttribute('role', 'listitem');
+        itemWrapper.innerHTML = `
+          <div class="filter-row">
+            <div class="filter-item-name">${item.name}</div>
+            <div class="filter-preview" style="flex: 1; min-width: 0;"></div>
+          </div>
+          <div class="filter-item-btns">
+            <button data-action="${CONFIG.ACTIONS.LOAD_FILTER}" data-index="${realIndex}">加载</button>
+            <button data-action="${CONFIG.ACTIONS.RENAME_FILTER}" data-index="${realIndex}">重命名</button>
+            <button data-action="${CONFIG.ACTIONS.COPY_FILTER}" data-index="${realIndex}">复制</button>
+            <button data-action="${CONFIG.ACTIONS.TOP_FILTER}" data-index="${realIndex}">置顶</button>
+            <button data-action="favoriteFilter" data-index="${realIndex}" ${isFavorited ? 'class="red"' : ''}>收藏</button>
+            <button class="del" data-action="${CONFIG.ACTIONS.DELETE_FILTER}" data-index="${realIndex}">删除</button>
+          </div>
+        `;
+        itemWrapper.querySelector('.filter-preview').appendChild(previewFragment);
+        fragment.appendChild(itemWrapper);
+      });
+// ... existing code ...// ... existing code ...
+      // 方案操作
+      if(action === CONFIG.ACTIONS.TOGGLE_SHOW_ALL) Business.toggleShowAllFilters();
+      if(action === CONFIG.ACTIONS.LOAD_FILTER) Business.loadFilter(Number(index));
+      if(action === CONFIG.ACTIONS.RENAME_FILTER) Business.renameFilter(Number(index));
+      if(action === CONFIG.ACTIONS.COPY_FILTER) Business.copyFilterNums(Number(index));
+      if(action === CONFIG.ACTIONS.TOP_FILTER) Business.topFilter(Number(index));
+      if(action === CONFIG.ACTIONS.DELETE_FILTER) Business.deleteFilter(Number(index));
+      // 收藏操作
+      if(action === 'favoriteFilter') Business.favoriteFilter(Number(index));
+      if(action === 'loadFavorite') Business.loadFavorite(Number(index));
+      if(action === 'renameFavorite') Business.renameFavorite(Number(index));
+      if(action === 'copyFavorite') Business.copyFavorite(Number(index));
+// ... existing code .../* 通用组件：按钮、卡片、标签、导航、弹窗、筛选等 */
 /* 按钮组件 */
 .btn-group{display:flex;gap:var(--spacing-xs);flex-wrap:wrap}
 
@@ -174,6 +237,21 @@
   align-items:flex-start;
   gap:6px;
   margin:8px 0;
+  justify-content: space-between;
+}
+
+/* 预测生肖容器（靠左） */
+.history-tags-predicted {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+/* 开奖生肖容器（靠右） */
+.history-tags-actual {
+  display: flex;
+  flex-shrink: 0;
 }
 
 /* 历史记录标签 */
@@ -202,6 +280,92 @@
 .history-tag.miss{
   background:var(--danger);
   color:#fff;
+}
+
+/* 开奖生肖标签样式 */
+.history-tag-actual {
+  background: linear-gradient(135deg, var(--primary) 0%, #0051d5 100%);
+  color: white;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+/* 命中的标签（蓝色高亮） */
+.history-tag-matched {
+  background: linear-gradient(135deg, var(--primary) 0%, #007AFF 100%) !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.4);
+}
+
+/* 未命中的开奖标签（红色高亮） */
+.history-tag-miss {
+  background: linear-gradient(135deg, var(--danger) 0%, #ff3b30 100%) !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  .history-tag-actual {
+    background: linear-gradient(135deg, var(--primary) 0%, #007AFF 100%);
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.4);
+  }
+  
+  .history-tag-matched {
+    background: linear-gradient(135deg, var(--primary) 0%, #0A84FF 100%) !important;
+    box-shadow: 0 2px 8px rgba(10, 132, 255, 0.5);
+  }
+  
+  .history-tag-miss {
+    background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%) !important;
+    box-shadow: 0 2px 8px rgba(255, 69, 58, 0.5);
+  }
+}
+
+/* 确保检查结果总是在标签下方显示 */
+.history-check-result {
+  display: block !important;
+  clear: both !important;
+  margin-top: 8px !important;
+  font-size: 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* 确保历史记录标签容器不会与检查结果在同一行 */
+.history-tags {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+  margin: 8px 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 历史记录项基础样式 */
+.history-item {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out, max-height 0.3s ease-out;
+  /* 触摸优化：允许垂直滚动，禁用水平滚动 */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  /* iOS 性能优化 */
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform, opacity, max-height;
 }
 
 /* 历史预测期数分区 */
@@ -663,6 +827,7 @@
   border-radius: 1.25rem;
   width: 85%;
   max-width: 22rem;
+  min-height: 400px;  /* ✅ 设置最小高度，防止切换时期大小跳动 */
   max-height: 80vh;
   overflow-y: auto;
   padding: 0;
@@ -803,6 +968,7 @@
   .modal-content, .zodiac-detail-modal-content {
     width: 90%;
     max-width: 20rem;
+    min-height: 350px;  /* ✅ 小屏最小高度 */
     border-radius: 1rem;
     max-height: 85vh;
   }

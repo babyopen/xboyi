@@ -337,27 +337,33 @@ export const Storage = {
       }
 
       const records = Storage.get(Storage.KEYS.ZODIAC_RECORDS, []);
-      const recordIndex = records.findIndex(r => r.issue === issue);
+      let found = false;
+      let allResults = [];
       
-      if (recordIndex >= 0) {
-        const record = records[recordIndex];
-        if (!record.zodiacs || !Array.isArray(record.zodiacs)) {
-          return { success: false, message: '记录数据格式错误' };
+      // 查找所有匹配期号的记录并核对
+      records.forEach((record, index) => {
+        if (record.issue === issue) {
+          found = true;
+          if (record.zodiacs && Array.isArray(record.zodiacs)) {
+            const matched = record.zodiacs.includes(actualZodiac);
+            
+            // 更新记录
+            records[index] = {
+              ...record,
+              checked: true,
+              matched: matched,
+              actualZodiac: actualZodiac,
+              checkedAt: Date.now()
+            };
+            
+            allResults.push({ success: true, matched: matched, record: records[index] });
+          }
         }
-        
-        const matched = record.zodiacs.includes(actualZodiac);
-        
-        // 更新记录
-        records[recordIndex] = {
-          ...record,
-          checked: true,
-          matched: matched,
-          actualZodiac: actualZodiac,
-          checkedAt: Date.now()
-        };
-        
+      });
+      
+      if (found) {
         Storage.set(Storage.KEYS.ZODIAC_RECORDS, records);
-        return { success: true, matched: matched, record: records[recordIndex] };
+        return { success: true, results: allResults };
       }
       
       return { success: false, message: '未找到对应期号的记录' };
@@ -377,6 +383,44 @@ export const Storage = {
     } catch (e) {
       console.error('清除生肖记录失败:', e);
       return false;
+    }
+  },
+
+  /**
+   * 自动核对所有未核对的记录
+   * @param {Object} drawData - 开奖数据 { issue, zodiac }
+   * @returns {Object} 核对结果
+   */
+  autoCheckAllRecords: (drawData) => {
+    try {
+      if (!drawData || !drawData.issue || !drawData.zodiac) {
+        return { success: false, message: '开奖数据不完整' };
+      }
+
+      const { issue, zodiac } = drawData;
+      console.log('[AutoCheck] 🔄 开始自动核对比号:', issue, '开奖:', zodiac);
+
+      // 使用现有的 checkZodiacRecord 方法
+      const result = Storage.checkZodiacRecord(issue, zodiac);
+      
+      if (result.success) {
+        console.log('[AutoCheck] ✅ 自动核对成功，共核对', result.results?.length || 0, '条记录');
+        
+        // 触发自定义事件，通知页面更新
+        window.dispatchEvent(new CustomEvent('zodiacRecordsChecked', { 
+          detail: { issue, zodiac, results: result.results } 
+        }));
+        
+        // 触发存储事件
+        window.dispatchEvent(new StorageEvent('storage', { key: Storage.KEYS.ZODIAC_RECORDS }));
+      } else {
+        console.warn('[AutoCheck] ⚠️ 自动核对失败:', result.message);
+      }
+      
+      return result;
+    } catch (e) {
+      console.error('[AutoCheck] ❌ 自动核对异常:', e);
+      return { success: false, message: '自动核对异常' };
     }
   },
 
@@ -478,6 +522,50 @@ export const Storage = {
       return { success: false, message: '未找到对应期号的记录' };
     } catch (e) {
       console.error('核对号码记录失败:', e);
+      return { success: false, message: '核对失败' };
+    }
+  },
+
+  /**
+   * ✅ 核对待码热门TOP5记录
+   * @param {string} issue - 期号
+   * @param {Array} actualNumbers - 实际开奖号码
+   * @returns {Object} 核对结果
+   */
+  checkHotNumbersRecord: (issue, actualNumbers) => {
+    try {
+      if (!issue || !actualNumbers || !Array.isArray(actualNumbers)) {
+        return { success: false, message: '参数不完整' };
+      }
+
+      const records = Storage.get('hotNumbersRecords', []);
+      const recordIndex = records.findIndex(r => r.issue === issue);
+      
+      if (recordIndex >= 0) {
+        const record = records[recordIndex];
+        if (!record.numbers || !Array.isArray(record.numbers)) {
+          return { success: false, message: '记录数据格式错误' };
+        }
+        
+        // 判断预测的TOP5号码中是否有任意一个命中实际开奖号码
+        const matched = actualNumbers.some(num => record.numbers.includes(num));
+        
+        // 更新记录
+        records[recordIndex] = {
+          ...record,
+          checked: true,
+          matched: matched,
+          actualNumbers: actualNumbers,
+          checkedAt: Date.now()
+        };
+        
+        Storage.set('hotNumbersRecords', records);
+        return { success: true, matched: matched, record: records[recordIndex] };
+      }
+      
+      return { success: false, message: '未找到对应期号的记录' };
+    } catch (e) {
+      console.error('核对待码热门TOP5记录失败:', e);
       return { success: false, message: '核对失败' };
     }
   },
