@@ -5,7 +5,7 @@
  * @enum {any}
  */
 export const CONFIG = Object.freeze({
-  VERSION: 'V2.0.1',
+  VERSION: 'V2.0.3',
   DATA_VERSION: 1, // 数据版本号，用于后续数据迁移
   // API配置（默认值，用户可自定义）
   API: Object.freeze({
