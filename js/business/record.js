@@ -4,7 +4,7 @@ import { StateManager } from '../state-manager.js';
 import { Toast } from '../toast.js';
 import { Filter } from '../filter.js';
 import { DataQuery } from '../data-query.js';
-import { Utils } from '/js/utils.js';
+import { Utils } from '../utils.js';
 
 export const record = {
   // 标记事件是否已绑定，防止重复绑定
