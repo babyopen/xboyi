@@ -291,6 +291,8 @@ export const dataFetch = {
             record.checkNumberRecord(issue, actualNumbers);
             // ✅ 自动核对待码热门TOP5记录
             record.checkHotNumbersRecord(issue, actualNumbers);
+            // ✅ 自动核对ML预测记录
+            record.checkMLPredictionRecord(issue, resultZodiac);
           }
         });
       });

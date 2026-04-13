@@ -862,6 +862,7 @@ export const analysisRender = {
 
   /**
    * ✅ 自动保存精选特码记录（包含热号、冷号和当前模式）
+   * ✅ 保存所有筛选条件组合（10/20/30/all期 × 5/10/15/20个）
    * @param {Array} finalNums - 最终显示的号码
    * @param {Array} hotNumbers - 热号数据
    * @param {Array} coldNumbers - 冷号数据
@@ -882,17 +883,22 @@ export const analysisRender = {
       const issue = nextIssueObj.full;
       console.log('✅ 获取到下一期期号:', issue);
 
+      // ✅ 定义所有筛选条件组合
+      const allPeriods = [10, 20, 30, 'all'];  // 所有期数选项
+      const allNumCounts = [5, 10, 15, 20];    // 所有号码数量选项
+      
+      console.log('🎯 准备保存所有筛选条件组合:', { periods: allPeriods, numCounts: allNumCounts });
+
       // 转换为字符串格式
-      const numbersStr = finalNums.map(n => String(n).padStart(2, '0'));
+      const allNumbersStr = finalNums.map(n => String(n).padStart(2, '0'));
       const hotNumbersStr = hotNumbers.map(n => String(n).padStart(2, '0'));
       const coldNumbersStr = coldNumbers.map(n => String(n).padStart(2, '0'));
-      console.log('🔢 号码数据:', { numbers: numbersStr, hot: hotNumbersStr, cold: coldNumbersStr });
+      console.log('🔢 号码数据:', { numbers: allNumbersStr.length, hot: hotNumbersStr.length, cold: coldNumbersStr.length });
 
       // 确定类型
       let type = mode;
       if (mode === 'auto') {
         // 自动模式下，根据实际选择的子模式设置type
-        const state = StateManager._state;
         const data = analysisCalc.calcFullAnalysis();
         if (data) {
           const modeDecision = analysisCalc.decideAutoMode(data);
@@ -901,26 +907,63 @@ export const analysisRender = {
         }
       }
 
-      // 构建记录对象
-      const recordData = {
-        issue: issue,
-        numbers: numbersStr,
-        hotNumbers: hotNumbersStr,  // ✅ 保存热号
-        coldNumbers: coldNumbersStr, // ✅ 保存冷号
-        mode: mode,                  // ✅ 保存当前模式
-        type: type                   // ✅ 保存类型（用于筛选）
-      };
-      console.log('📦 准备保存的记录:', recordData);
-
-      // 异步导入record模块并保存
+      // ✅ 异步导入record模块并保存所有组合
       import('../../record.js').then(({ record }) => {
         console.log('📥 record模块导入成功');
-        const success = record.saveNumberRecord(recordData);
-        console.log('💾 保存结果:', success);
-        if (success) {
-          console.log('✅ 精选特码记录已自动保存', { issue: `${issue}(下一期)`, mode, count: numbersStr.length });
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        // 遍历所有期数选项
+        allPeriods.forEach(period => {
+          // 遍历所有号码数量选项
+          allNumCounts.forEach(numCount => {
+            try {
+              // 根据号码数量截取号码
+              const numbersStr = allNumbersStr.slice(0, numCount);
+              const hotStr = hotNumbersStr.slice(0, numCount);
+              const coldStr = coldNumbersStr.slice(0, numCount);
+              
+              // 构建记录对象
+              const recordData = {
+                issue: issue,
+                period: period,           // 期数范围：10/20/30/all
+                numCount: numCount,       // 号码数量：5/10/15/20
+                numbers: numbersStr,
+                hotNumbers: hotStr,       // 保存热号
+                coldNumbers: coldStr,     // 保存冷号
+                mode: mode,               // 保存当前模式
+                type: type                // 保存类型（用于筛选）
+              };
+              
+              // 保存记录
+              const success = record.saveNumberRecord(recordData);
+              if (success) {
+                successCount++;
+              } else {
+                failCount++;
+              }
+            } catch (err) {
+              console.error(`❌ 保存记录失败 [${period}期/${numCount}个]:`, err);
+              failCount++;
+            }
+          });
+        });
+        
+        console.log('✅ 精选特码记录批量保存完成:', { 
+          总数: allPeriods.length * allNumCounts.length,
+          成功: successCount,
+          失败: failCount 
+        });
+        
+        if (successCount > 0) {
+          console.log('✅ 精选特码记录已自动保存', { 
+            issue: `${issue}(下一期)`, 
+            mode, 
+            总组合数: successCount 
+          });
         } else {
-          console.error('❌ 精选特码记录自动保存失败');
+          console.error('❌ 所有精选特码记录自动保存失败');
         }
       }).catch(err => {
         console.error('❌ 导入record模块失败:', err);

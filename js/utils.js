@@ -459,8 +459,16 @@ export const Utils = {
       const isLongSwipe = deltaX <= -Utils.SwipeDeleteHandler._threshold; // 长距离滑动
       
       if (isQuickSwipe || isLongSwipe) {
-        // 执行删除
-        Utils.SwipeDeleteHandler._performDelete(item, deleteCallback);
+        // ✅ 添加二次确认
+        if (confirm('确定要删除这条记录吗？')) {
+          // 执行删除
+          Utils.SwipeDeleteHandler._performDelete(item, deleteCallback);
+        } else {
+          // 用户取消删除，显示提示
+          if (typeof Toast !== 'undefined') {
+            Toast.show('已取消删除');
+          }
+        }
       }
       
       // 隐藏指示器并清理

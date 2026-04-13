@@ -317,13 +317,19 @@ if (!Business.silentSaveAllSpecialCombinations) {
         }
         
         if (issue) {
+          // ✅ 获取当前筛选条件
+          const period = state.analysis?.analyzeLimit || 10;
+          const numCount = state.analysis?.selectedNumCount || selected.length;
+          
           // 保存到历史记录
           Storage.saveNumberRecord({
             issue: issue,
+            period: period,           // ✅ 期数范围
+            numCount: numCount,       // ✅ 号码数量
             numbers: selected,
             recordType: 'special'
           });
-          console.log('后台静默保存精选特码组合成功:', selected);
+          console.log('后台静默保存精选特码组合成功:', { issue, period, numCount, count: selected.length });
         }
       }
     } catch(e) {

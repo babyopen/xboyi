@@ -437,7 +437,14 @@ export const Storage = {
       }
 
       const records = Storage.get(Storage.KEYS.NUMBER_RECORDS, []);
-      const existingIndex = records.findIndex(r => r.issue === recordData.issue);
+      
+      // ✅ 使用复合键去重：期号 + 期数范围 + 号码数量
+      // 这样同一期号的不同筛选条件可以分别保存
+      const existingIndex = records.findIndex(r => 
+        r.issue === recordData.issue && 
+        r.period === recordData.period && 
+        r.numCount === recordData.numCount
+      );
       
       if (existingIndex >= 0) {
         // 更新现有记录
@@ -446,6 +453,7 @@ export const Storage = {
           ...recordData,
           updatedAt: Date.now()
         };
+        console.log('🔄 更新现有记录:', { issue: recordData.issue, period: recordData.period, numCount: recordData.numCount });
       } else {
         // 添加新记录
         records.unshift({
@@ -455,11 +463,12 @@ export const Storage = {
           checked: false,
           matched: null
         });
+        console.log('➕ 添加新记录:', { issue: recordData.issue, period: recordData.period, numCount: recordData.numCount });
       }
       
-      // 只保留最近50条记录
-      if (records.length > 50) {
-        records.splice(50);
+      // ✅ 只保留最近200条记录（支持批量保存：16条组合 × 12期）
+      if (records.length > 200) {
+        records.splice(200);
       }
       
       return Storage.set(Storage.KEYS.NUMBER_RECORDS, records);
@@ -496,27 +505,38 @@ export const Storage = {
       }
 
       const records = Storage.get(Storage.KEYS.NUMBER_RECORDS, []);
-      const recordIndex = records.findIndex(r => r.issue === issue);
       
-      if (recordIndex >= 0) {
-        const record = records[recordIndex];
-        if (!record.numbers || !Array.isArray(record.numbers)) {
-          return { success: false, message: '记录数据格式错误' };
+      // ✅ 查找所有匹配该期号的记录（可能有多个，对应不同筛选条件）
+      let updatedCount = 0;
+      const updatedRecords = records.map(record => {
+        if (record.issue === issue && record.numbers && Array.isArray(record.numbers)) {
+          // 判断预测的号码中是否有任意一个命中实际开奖号码
+          const matched = actualNumbers.some(num => record.numbers.includes(num));
+          
+          // 更新记录
+          return {
+            ...record,
+            checked: true,
+            matched: matched,
+            actualNumbers: actualNumbers,
+            checkedAt: Date.now()
+          };
         }
-        
-        const matched = actualNumbers.some(num => record.numbers.includes(num));
-        
-        // 更新记录
-        records[recordIndex] = {
-          ...record,
-          checked: true,
-          matched: matched,
-          actualNumbers: actualNumbers,
-          checkedAt: Date.now()
+        return record;
+      });
+      
+      // 计算更新了多少条记录
+      updatedCount = updatedRecords.filter((r, idx) => {
+        return r.issue === issue && r.checked && records[idx].checked !== r.checked;
+      }).length;
+      
+      if (updatedCount > 0) {
+        Storage.set(Storage.KEYS.NUMBER_RECORDS, updatedRecords);
+        return { 
+          success: true, 
+          message: `已核对 ${updatedCount} 条记录`,
+          updatedCount: updatedCount
         };
-        
-        Storage.set(Storage.KEYS.NUMBER_RECORDS, records);
-        return { success: true, matched: matched, record: records[recordIndex] };
       }
       
       return { success: false, message: '未找到对应期号的记录' };
@@ -566,6 +586,63 @@ export const Storage = {
       return { success: false, message: '未找到对应期号的记录' };
     } catch (e) {
       console.error('核对待码热门TOP5记录失败:', e);
+      return { success: false, message: '核对失败' };
+    }
+  },
+
+  /**
+   * 核对 ML 预测记录
+   * @param {string} issue - 期号
+   * @param {string} actualZodiac - 实际开奖生肖
+   * @returns {Object} 核对结果
+   */
+  checkMLPredictionRecord: (issue, actualZodiac) => {
+    try {
+      if (!issue || !actualZodiac) {
+        return { success: false, message: '参数不完整' };
+      }
+
+      const records = Storage.get('mlPredictionRecords', []);
+      
+      // ✅ 查找所有匹配该期号的记录
+      let updatedCount = 0;
+      const updatedRecords = records.map(record => {
+        if (record.issue === issue && record.predictions && Array.isArray(record.predictions)) {
+          // 提取预测的生肖名称列表（去除百分比部分）
+          const predictedZodiacs = record.predictions.map(z => z.split('(')[0].trim());
+          
+          // 判断实际开奖生肖是否在预测列表中
+          const matched = predictedZodiacs.includes(actualZodiac);
+          
+          // 更新记录
+          return {
+            ...record,
+            checked: true,
+            matched: matched,
+            actualZodiac: actualZodiac,
+            checkedAt: Date.now()
+          };
+        }
+        return record;
+      });
+      
+      // 计算更新了多少条记录
+      updatedCount = updatedRecords.filter((r, idx) => {
+        return r.issue === issue && r.checked && records[idx].checked !== r.checked;
+      }).length;
+      
+      if (updatedCount > 0) {
+        Storage.set('mlPredictionRecords', updatedRecords);
+        return { 
+          success: true, 
+          message: `已核对 ${updatedCount} 条记录`,
+          updatedCount: updatedCount
+        };
+      }
+      
+      return { success: false, message: '未找到对应期号的记录' };
+    } catch (e) {
+      console.error('核对ML预测记录失败:', e);
       return { success: false, message: '核对失败' };
     }
   },

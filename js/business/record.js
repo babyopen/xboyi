@@ -32,7 +32,7 @@ export const record = {
    * 初始化筛选按钮状态
    */
   _initFilterButtons: () => {
-    // 默认选中10期按钮
+    // 默认选中10期按钮（生肖预测）
     const btn10 = document.querySelector('.prediction-period-btn[data-period="10"]');
     if (btn10) {
       btn10.classList.add('active');
@@ -44,6 +44,32 @@ export const record = {
       }
     });
     console.log('[Init] 生肖预测历史筛选初始化，默认显示10期数据');
+    
+    // ✅ 默认选中10期按钮（精选特码）
+    const specialBtn10 = document.querySelector('.special-period-btn[data-period="10"]');
+    if (specialBtn10) {
+      specialBtn10.classList.add('active');
+    }
+    // 确保其他期数按钮未选中
+    document.querySelectorAll('.special-period-btn').forEach(btn => {
+      if (btn.dataset.period !== '10') {
+        btn.classList.remove('active');
+      }
+    });
+    
+    // ✅ 默认选中5个按钮（精选特码）
+    const specialNumBtn5 = document.querySelector('.special-num-btn[data-num="5"]');
+    if (specialNumBtn5) {
+      specialNumBtn5.classList.add('active');
+    }
+    // 确保其他数量按钮未选中
+    document.querySelectorAll('.special-num-btn').forEach(btn => {
+      if (btn.dataset.num !== '5') {
+        btn.classList.remove('active');
+      }
+    });
+    
+    console.log('[Init] 精选特码历史筛选初始化，默认显示10期、5个数据');
   },
 
   // 渲染所有历史记录
@@ -104,28 +130,44 @@ export const record = {
       const fragment = document.createDocumentFragment();
       favorites.forEach((item, idx) => {
         try {
-          const filtered = Filter.getFilteredList(item.selected, item.excluded);
-          const previewNums = filtered.slice(0, 4);
+          // ✅ 支持精选特码收藏和普通方案
+          let previewList;
+          if (item.numbers && Array.isArray(item.numbers)) {
+            // 精选特码收藏：直接使用 numbers
+            previewList = item.numbers.map(num => DataQuery.getNumAttrs(num));
+          } else {
+            // 普通方案：使用筛选结果
+            previewList = Filter.getFilteredList(item.selected, item.excluded);
+          }
+          
           const card = document.createElement('div');
           card.className = 'filter-item';
+          
+          // ✅ 生成号码预览（支持横向滚动，显示所有号码）
+          const previewFragment = document.createDocumentFragment();
+          previewList.forEach(num => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'num-item';
+            wrapper.innerHTML = `<div class="num-ball ${num.color}色">${num.s}</div><div class="tag-zodiac">${num.zodiac}</div>`;
+            previewFragment.appendChild(wrapper);
+          });
+          
           card.innerHTML = `
             <div class="filter-row">
               <div class="filter-item-name">${escapeHtml(item.name)}</div>
-              <div class="filter-preview">
-                ${previewNums.map(num => {
-                  const attrs = DataQuery.getNumAttrs(num.num);
-                  return `<div class="num-ball-mini ${attrs.color}色">${num.s}<span class="num-zodiac">${attrs.zodiac}</span></div>`;
-                }).join('')}
-                ${filtered.length > 4 ? '<div class="more-indicator">+更多</div>' : ''}
-              </div>
+              <div class="filter-preview" style="flex: 1; min-width: 0;"></div>
             </div>
             <div class="filter-item-btns">
               <button class="filter-item-btn" data-action="loadFavorite" data-index="${idx}">加载</button>
               <button class="filter-item-btn" data-action="renameFavorite" data-index="${idx}">重命名</button>
               <button class="filter-item-btn" data-action="copyFavorite" data-index="${idx}">复制</button>
-              <button class="filter-item-btn del" data-action="removeFavorite" data-index="${idx}">移除</button>
             </div>
           `;
+          
+          // ✅ 将号码预览添加到 filter-preview 容器
+          const previewContainer = card.querySelector('.filter-preview');
+          previewContainer.appendChild(previewFragment);
+          
           fragment.appendChild(card);
         } catch (error) {
           console.error('渲染收藏项失败:', error);
@@ -397,6 +439,12 @@ export const record = {
     mlPrediction: false,     // ML预测
     special: false,          // 精选特码
     hotNumbers: false        // 特码热门TOP5
+  },
+  
+  // ✅ 精选特码历史筛选状态
+  _specialHistoryFilter: {
+    selectedPeriod: '10',   // 默认10期
+    selectedNumCount: '5'   // 默认5个
   },
   
   /**
@@ -696,6 +744,24 @@ export const record = {
           const zodiacs = Array.isArray(rec.predictions) ? rec.predictions : [];
           const modelVersion = rec.modelVersion || '1.0';
           const inputFeatures = rec.inputFeatures || '历史开奖数据';
+          
+          // ✅ 构建预测生肖标签HTML（带核对状态）
+          const predictedTagsHtml = zodiacs.map((z, index) => {
+            // ✅ 只取生肖名称，去除可能的百分比部分（如 "龙(14.9%)" -> "龙"）
+            const zodiacName = z.split('(')[0].trim();
+            // 判断是否命中
+            const isMatched = rec.checked && rec.matched && rec.actualZodiac === zodiacName;
+            const className = isMatched ? 'history-tag history-tag-matched' : 'history-tag';
+            return `<div class="${className}">${escapeHtml(zodiacName)}</div>`;
+          }).join('');
+          
+          // ✅ 构建开奖生肖标签HTML
+          let actualTagHtml = '';
+          if (rec.checked && rec.actualZodiac) {
+            const actualClass = rec.matched ? 'history-tag history-tag-actual history-tag-matched' : 'history-tag history-tag-actual history-tag-miss';
+            actualTagHtml = `<div class="${actualClass}">${escapeHtml(rec.actualZodiac)}</div>`;
+          }
+          
           const item = document.createElement('div');
           item.className = 'history-item';
           item.dataset.index = idx;
@@ -705,20 +771,15 @@ export const record = {
               <div class="history-time">${dateStr}</div>
             </div>
             <div class="history-tags">
-              <div class="history-tags-predicted">
-              ${zodiacs.map(z => {
-                // ✅ 只取生肖名称，去除可能的百分比部分（如 "龙(14.9%)" -> "龙"）
-                const zodiacName = z.split('(')[0].trim();
-                return `<div class="history-tag">${escapeHtml(zodiacName)}</div>`;
-              }).join('')}
-              </div>
+              <div class="history-tags-predicted">${predictedTagsHtml}</div>
+              ${actualTagHtml ? `<div class="history-tags-actual">${actualTagHtml}</div>` : ''}
             </div>
             <div class="history-meta" style="font-size: 12px; color: #999; margin-top: 5px;">模型版本: ${escapeHtml(modelVersion)} | 特征: ${escapeHtml(inputFeatures)}</div>
           `;
           
           // 绑定触摸事件
           record._bindSwipeDeleteToItem(item, idx, 'mlPrediction', () => {
-            record._deleteMLPredictionRecord(rec.issue);
+            record._deleteMLPredictionRecord(rec);
           });
           
           fragment.appendChild(item);
@@ -761,6 +822,18 @@ export const record = {
       Toast.show('已清空ML预测历史');
     }
   },
+  /**
+   * 核对 ML 预测记录
+   * @param {string} issue - 期号
+   * @param {string} actualZodiac - 实际开奖生肖
+   */
+  checkMLPredictionRecord: (issue, actualZodiac) => {
+    const result = Storage.checkMLPredictionRecord(issue, actualZodiac);
+    if (result.success) {
+      record.renderMLPredictionHistory();
+    }
+    return result;
+  },
 
   // ---------- 精选特码历史 ----------
   renderSpecialHistory: () => {
@@ -786,6 +859,11 @@ export const record = {
       const activeModeBtn = document.querySelector('.special-history-mode-btn.active');
       const historyMode = activeModeBtn ? activeModeBtn.dataset.mode : 'all';
       
+      // ✅ 获取当前筛选条件（期数和号码数量）
+      const selectedPeriod = record._specialHistoryFilter.selectedPeriod;
+      const selectedNumCount = record._specialHistoryFilter.selectedNumCount;
+      console.log('[Record] 📊 精选特码筛选条件:', { period: selectedPeriod, numCount: selectedNumCount });
+      
       // ✅ 根据模式筛选记录
       let filteredRecords = specialRecords;
       if (historyMode !== 'all') {
@@ -800,6 +878,69 @@ export const record = {
           return true;
         });
       }
+      
+      // ✅ 根据期数和号码数量筛选
+      console.log('[Record] 🔍 开始筛选记录...');
+      console.log('[Record] 📊 当前筛选条件:', { period: selectedPeriod, numCount: selectedNumCount, 类型: typeof selectedPeriod, 数量类型: typeof selectedNumCount });
+      
+      filteredRecords = filteredRecords.filter((rec, index) => {
+        // 记录前3条数据的详细信息
+        if (index < 3) {
+          console.log(`[Record] 📝 记录[${index}]:`, {
+            issue: rec.issue,
+            period: rec.period,
+            period类型: typeof rec.period,
+            numCount: rec.numCount,
+            numCount类型: typeof rec.numCount,
+            numbers数量: rec.numbers ? rec.numbers.length : 0
+          });
+        }
+        
+        // 期数匹配：如果记录有period字段，需要匹配
+        if (rec.period !== undefined) {
+          // 处理'全年'和'all'的兼容性
+          const recordPeriod = rec.period === 'all' ? 'all' : String(rec.period);
+          const matchPeriod = recordPeriod === selectedPeriod;
+          
+          if (index < 3) {
+            console.log(`[Record] 📊 记录[${index}] 期数匹配:`, {
+              记录期数: recordPeriod,
+              筛选期数: selectedPeriod,
+              匹配结果: matchPeriod
+            });
+          }
+          
+          if (!matchPeriod) {
+            return false;
+          }
+        }
+        
+        // 号码数量匹配：如果记录有numCount字段，需要匹配
+        if (rec.numCount !== undefined) {
+          const recordNumCount = String(rec.numCount);
+          const matchNumCount = recordNumCount === selectedNumCount;
+          
+          if (index < 3) {
+            console.log(`[Record] 🎯 记录[${index}] 数量匹配:`, {
+              记录数量: recordNumCount,
+              筛选数量: selectedNumCount,
+              匹配结果: matchNumCount
+            });
+          }
+          
+          if (!matchNumCount) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      console.log('[Record] 📊 筛选结果:', { 
+        总记录数: specialRecords.length, 
+        模式筛选后: filteredRecords.length,
+        筛选条件: { period: selectedPeriod, numCount: selectedNumCount }
+      });
       
       const fragment = document.createDocumentFragment();
       filteredRecords.forEach((rec, idx) => {
@@ -833,21 +974,37 @@ export const record = {
           
           // ✅ 构建元数据显示（期数范围和号码数量）
           let metaInfo = '';
-          if (rec.meta) {
-            const periodText = rec.meta.period === 'all' ? '全年' : `${rec.meta.period}期`;
-            const countText = `${rec.meta.count}个`;
+          if (rec.period && rec.numCount) {
+            const periodText = rec.period === 'all' ? '全年' : `${rec.period}期`;
+            const countText = `${rec.numCount}个`;
             metaInfo = `<div class="history-meta" style="font-size:11px;color:#999;margin-top:4px;display:flex;gap:8px;align-items:center;">
               <span>📊 ${periodText}</span>
               <span>🎯 ${countText}</span>
             </div>`;
           }
           
-          // ✅ 构建核对状态标识
-          let checkStatusHtml = '';
-          if (rec.checked) {
-            const statusClass = rec.matched ? 'history-tag-matched' : 'history-tag-miss';
-            const statusText = rec.matched ? '✅ 命中' : '❌ 未中';
-            checkStatusHtml = `<div class="history-check-status ${statusClass}" style="font-size:11px;margin-top:4px;">${statusText}</div>`;
+          // 构建预测号码标签HTML
+          let predictedTagsHtml = '';
+          if (rec.checked && rec.actualNumbers && Array.isArray(rec.actualNumbers) && rec.actualNumbers.length > 0) {
+            // 提取特码（最后一个号码）
+            const specialNumber = rec.actualNumbers[rec.actualNumbers.length - 1];
+            // 为每个预测号码添加相应的样式类
+            predictedTagsHtml = displayNumbers.map(n => {
+              // 如果命中且当前号码等于特码，则高亮蓝色
+              const tagClass = (rec.matched && n === specialNumber) ? 'history-tag history-tag-matched' : 'history-tag';
+              return `<div class="${tagClass}">${escapeHtml(n)}</div>`;
+            }).join('');
+          } else {
+            predictedTagsHtml = displayNumbers.map(n => `<div class="history-tag">${escapeHtml(n)}</div>`).join('');
+          }
+          
+          // 构建开奖号码标签HTML（如果有开奖号码数据）
+          let actualTagHtml = '';
+          if (rec.checked && rec.actualNumbers && Array.isArray(rec.actualNumbers) && rec.actualNumbers.length > 0) {
+            // 提取特码（最后一个号码）
+            const specialNumber = rec.actualNumbers[rec.actualNumbers.length - 1];
+            const actualClass = rec.matched ? 'history-tag history-tag-matched' : 'history-tag history-tag-miss';
+            actualTagHtml = `<div class="${actualClass}">${escapeHtml(specialNumber)}</div>`;
           }
           
           const item = document.createElement('div');
@@ -859,17 +1016,15 @@ export const record = {
               <div class="history-time">${dateStr}</div>
             </div>
             <div class="history-tags">
-              <div class="history-tags-predicted">
-              ${displayNumbers.map(n => `<div class="history-tag">${escapeHtml(n)}</div>`).join('')}
-              </div>
+              <div class="history-tags-predicted">${predictedTagsHtml}</div>
+              ${actualTagHtml ? `<div class="history-tags-actual">${actualTagHtml}</div>` : ''}
             </div>
             ${metaInfo}
-            ${checkStatusHtml}
           `;
           
           // 绑定触摸事件
           record._bindSwipeDeleteToItem(item, idx, 'special', () => {
-            record._deleteSpecialRecord(rec.issue);
+            record._deleteSpecialRecord(rec);
           });
           
           fragment.appendChild(item);
@@ -926,12 +1081,28 @@ export const record = {
           const dateStr = rec.createdAt ? new Date(rec.createdAt).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
           const numbers = Array.isArray(rec.numbers) ? rec.numbers : [];
           
-          // ✅ 构建核对状态标识
-          let checkStatusHtml = '';
-          if (rec.checked) {
-            const statusClass = rec.matched ? 'history-tag-matched' : 'history-tag-miss';
-            const statusText = rec.matched ? '✅ 命中' : '❌ 未中';
-            checkStatusHtml = `<div class="history-check-status ${statusClass}" style="font-size:11px;margin-top:4px;">${statusText}</div>`;
+          // 构建预测号码标签HTML
+          let predictedTagsHtml = '';
+          if (rec.checked && rec.actualNumbers && Array.isArray(rec.actualNumbers) && rec.actualNumbers.length > 0) {
+            // 提取特码（最后一个号码）
+            const specialNumber = rec.actualNumbers[rec.actualNumbers.length - 1];
+            // 为每个预测号码添加相应的样式类
+            predictedTagsHtml = numbers.map(n => {
+              // 如果命中且当前号码等于特码，则高亮蓝色
+              const tagClass = (rec.matched && n === specialNumber) ? 'history-tag history-tag-matched' : 'history-tag';
+              return `<div class="${tagClass}">${escapeHtml(n)}</div>`;
+            }).join('');
+          } else {
+            predictedTagsHtml = numbers.map(n => `<div class="history-tag">${escapeHtml(n)}</div>`).join('');
+          }
+          
+          // 构建开奖号码标签HTML（如果有开奖号码数据）
+          let actualTagHtml = '';
+          if (rec.checked && rec.actualNumbers && Array.isArray(rec.actualNumbers) && rec.actualNumbers.length > 0) {
+            // 提取特码（最后一个号码）
+            const specialNumber = rec.actualNumbers[rec.actualNumbers.length - 1];
+            const actualClass = rec.matched ? 'history-tag history-tag-matched' : 'history-tag history-tag-miss';
+            actualTagHtml = `<div class="${actualClass}">${escapeHtml(specialNumber)}</div>`;
           }
           
           const item = document.createElement('div');
@@ -943,11 +1114,9 @@ export const record = {
               <div class="history-time">${dateStr}</div>
             </div>
             <div class="history-tags">
-              <div class="history-tags-predicted">
-              ${numbers.map(n => `<div class="history-tag">${escapeHtml(n)}</div>`).join('')}
-              </div>
+              <div class="history-tags-predicted">${predictedTagsHtml}</div>
+              ${actualTagHtml ? `<div class="history-tags-actual">${actualTagHtml}</div>` : ''}
             </div>
-            ${checkStatusHtml}
           `;
           
           // 绑定触摸事件
@@ -1033,10 +1202,29 @@ export const record = {
     Toast.show(`已应用筛选：${selectedPeriod === 'all' ? '全年' : selectedPeriod + '期'}`);
   },
   confirmSpecialFilters: () => {
-    // 这里可以添加筛选逻辑
+    // 获取当前选中的期数按钮
+    const activePeriodBtn = document.querySelector('.special-period-btn.active');
+    const selectedPeriod = activePeriodBtn ? activePeriodBtn.dataset.period : '10';
+    
+    // 获取当前选中的号码数量按钮
+    const activeNumBtn = document.querySelector('.special-num-btn.active');
+    const selectedNumCount = activeNumBtn ? activeNumBtn.dataset.num : '5';
+    
+    // 更新筛选状态
+    record._specialHistoryFilter.selectedPeriod = selectedPeriod;
+    record._specialHistoryFilter.selectedNumCount = selectedNumCount;
+    
+    console.log('[Record] 📊 精选特码筛选条件已更新:', record._specialHistoryFilter);
+    
+    // 关闭筛选面板
     const panel = document.getElementById('specialFiltersPanel');
     if (panel) panel.classList.remove('show');
-    Toast.show('筛选条件已应用');
+    
+    // 重新渲染精选特码历史
+    record.renderSpecialHistory();
+    
+    const periodText = selectedPeriod === 'all' ? '全年' : selectedPeriod + '期';
+    Toast.show(`已应用筛选：${periodText} ${selectedNumCount}个`);
   },
   switchSpecialHistoryMode: (mode) => {
     const buttons = document.querySelectorAll('.special-history-mode-btn');
@@ -1500,6 +1688,62 @@ export const record = {
       record.renderZodiacPredictionHistory();
     });
     
+    // ✅ 精选特码历史筛选按钮点击事件（期数 - 单选，立即筛选）
+    document.addEventListener('click', (e) => {
+      const periodBtn = e.target.closest('.special-period-btn');
+      if (!periodBtn) return;
+      
+      // 如果按钮有 data-action，由上面的处理器处理
+      if (periodBtn.dataset.action) return;
+      
+      const period = periodBtn.dataset.period;
+      if (!period) return;
+      
+      // 移除所有期数按钮的active类（实现单选）
+      document.querySelectorAll('.special-period-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // 给当前点击的按钮添加active类
+      periodBtn.classList.add('active');
+      
+      // 更新筛选状态
+      record._specialHistoryFilter.selectedPeriod = period;
+      
+      // ✅ 立即执行筛选和渲染
+      record.renderSpecialHistory();
+      
+      console.log('[Record] 📊 精选特码期数选择:', period);
+    });
+    
+    // ✅ 精选特码历史筛选按钮点击事件（数量 - 单选，立即筛选）
+    document.addEventListener('click', (e) => {
+      const numBtn = e.target.closest('.special-num-btn');
+      if (!numBtn) return;
+      
+      // 如果按钮有 data-action，由上面的处理器处理
+      if (numBtn.dataset.action) return;
+      
+      const numCount = numBtn.dataset.num;
+      if (!numCount) return;
+      
+      // 移除所有数量按钮的active类（实现单选）
+      document.querySelectorAll('.special-num-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // 给当前点击的按钮添加active类
+      numBtn.classList.add('active');
+      
+      // 更新筛选状态
+      record._specialHistoryFilter.selectedNumCount = numCount;
+      
+      // ✅ 立即执行筛选和渲染
+      record.renderSpecialHistory();
+      
+      console.log('[Record] 📊 精选特码数量选择:', numCount);
+    });
+    
     // localStorage变化监听，确保数据实时同步
     window.addEventListener('storage', (event) => {
       if (!event.key) return;
@@ -1682,36 +1926,36 @@ export const record = {
   },
 
   /**
-   * 删除ML预测记录
-   * @param {string} issue - 期号
+   * 删除 ML 预测记录
+   * @param {Object} recordData - 记录对象
    */
-  _deleteMLPredictionRecord: (issue) => {
+  _deleteMLPredictionRecord: (recordData) => {
     try {
-      if (!issue || typeof issue !== 'string') {
-        console.warn('[Record] 无效的期号:', issue);
+      if (!recordData || !recordData.issue) {
+        console.warn('[Record] 无效的记录:', recordData);
         return;
       }
-      
+        
       const mlRecords = Storage.get('mlPredictionRecords', []);
       if (!Array.isArray(mlRecords)) {
         console.error('[Record] 数据格式错误');
         Toast.show('数据异常，请刷新页面');
         return;
       }
-      
+        
       const originalLength = mlRecords.length;
-      const filtered = mlRecords.filter(r => r.issue !== issue);
-      
+      const filtered = mlRecords.filter(r => r.issue !== recordData.issue);
+        
       if (filtered.length === originalLength) {
-        console.warn('[Record] 未找到要删除的记录:', issue);
+        console.warn('[Record] 未找到要删除的记录:', recordData);
         return;
       }
-      
+        
       Storage.set('mlPredictionRecords', filtered);
-      
+        
       // 重新渲染
       record.renderMLPredictionHistory();
-      
+        
       Toast.show('已删除记录');
     } catch (error) {
       console.error('[Record] 删除ML预测记录失败:', error);
@@ -1723,10 +1967,10 @@ export const record = {
    * 删除精选特码记录
    * @param {string} issue - 期号
    */
-  _deleteSpecialRecord: (issue) => {
+  _deleteSpecialRecord: (record) => {
     try {
-      if (!issue || typeof issue !== 'string') {
-        console.warn('[Record] 无效的期号:', issue);
+      if (!record || !record.issue) {
+        console.warn('[Record] 无效的记录:', record);
         return;
       }
       
@@ -1738,10 +1982,19 @@ export const record = {
       }
       
       const originalLength = numberRecords.length;
-      const filtered = numberRecords.filter(r => r.issue !== issue);
+      
+      // ✅ 使用复合键删除：期号 + 期数范围 + 号码数量
+      const filtered = numberRecords.filter(r => {
+        // 如果记录有 period 和 numCount，使用复合键匹配
+        if (record.period && record.numCount) {
+          return !(r.issue === record.issue && r.period === record.period && r.numCount === record.numCount);
+        }
+        // 否则只按期号匹配（兼容旧数据）
+        return r.issue !== record.issue;
+      });
       
       if (filtered.length === originalLength) {
-        console.warn('[Record] 未找到要删除的记录:', issue);
+        console.warn('[Record] 未找到要删除的记录:', record);
         return;
       }
       
